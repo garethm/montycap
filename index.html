@@ -340,6 +340,7 @@
         function simulateProgram(tasks, programQuantity, hoursPerDay = 8) {
             // Create timeline for each series (parallel execution)
             const seriesTimelines = [];
+            const workSchedule = []; // Track when work happens
             let totalEffort = 0; // Total effort in hours
             
             for (let series = 0; series < programQuantity; series++) {
@@ -364,6 +365,15 @@
                     // Convert work hours to days for timeline calculation
                     const workDays = workEffortHours / hoursPerDay;
                     
+                    // Record work schedule entry
+                    workSchedule.push({
+                        series: series,
+                        task: task.name,
+                        startDay: seriesTime,
+                        endDay: seriesTime + workDays,
+                        hours: workEffortHours
+                    });
+                    
                     // Add to series timeline (work days + wait days)
                     seriesTime += workDays + waitTimeDays;
                     
@@ -381,7 +391,53 @@
             return {
                 totalEffort: totalEffort, // Total effort in hours
                 totalTime: totalTime, // Total timeline in days
-                seriesTimelines: seriesTimelines
+                seriesTimelines: seriesTimelines,
+                workSchedule: workSchedule // When work happens
+            };
+        }
+        
+        function calculateWorkloadDistribution(workSchedules, confidenceIndex, confidence) {
+            // Get the work schedule from the confidence percentile simulation
+            const targetSchedule = workSchedules[confidenceIndex];
+            
+            if (!targetSchedule || targetSchedule.length === 0) {
+                return { weeklyHours: [], maxWeek: 0 };
+            }
+            
+            // Find the maximum end day to determine number of weeks
+            const maxDay = Math.max(...targetSchedule.map(item => item.endDay));
+            const maxWeek = Math.ceil(maxDay / 7);
+            
+            // Initialize weekly hours array
+            const weeklyHours = new Array(maxWeek).fill(0);
+            
+            // Distribute work hours across weeks
+            targetSchedule.forEach(workItem => {
+                const startWeek = Math.floor(workItem.startDay / 7);
+                const endWeek = Math.floor(workItem.endDay / 7);
+                
+                if (startWeek === endWeek) {
+                    // Work entirely within one week
+                    weeklyHours[startWeek] += workItem.hours;
+                } else {
+                    // Work spans multiple weeks - distribute proportionally
+                    const totalDays = workItem.endDay - workItem.startDay;
+                    
+                    for (let week = startWeek; week <= endWeek; week++) {
+                        const weekStart = Math.max(workItem.startDay, week * 7);
+                        const weekEnd = Math.min(workItem.endDay, (week + 1) * 7);
+                        const daysInWeek = weekEnd - weekStart;
+                        const hoursInWeek = (daysInWeek / totalDays) * workItem.hours;
+                        
+                        weeklyHours[week] += hoursInWeek;
+                    }
+                }
+            });
+            
+            return {
+                weeklyHours: weeklyHours,
+                maxWeek: maxWeek,
+                confidence: confidence
             };
         }
         
@@ -452,12 +508,14 @@
             const effortResults = [];
             const timelineResults = [];
             const capacityResults = [];
+            const workSchedules = [];
             
             for (let i = 0; i < simulations; i++) {
                 const simulation = simulateProgram(tasks, programQuantity, hoursPerDay);
                 effortResults.push(simulation.totalEffort); // Hours
                 timelineResults.push(simulation.totalTime); // Days
                 capacityResults.push(capacity - simulation.totalEffort); // Hours
+                workSchedules.push(simulation.workSchedule);
             }
 
             effortResults.sort((a, b) => a - b);
@@ -481,6 +539,9 @@
 
             const overCapacityCount = effortResults.filter(r => r > capacity).length;
             const overCapacityPercent = (overCapacityCount / effortResults.length) * 100;
+            
+            // Calculate workload distribution for confidence level
+            const workloadData = calculateWorkloadDistribution(workSchedules, timelineConfidenceIndex, confidence);
 
             displayResults({
                 effort: {
@@ -502,7 +563,8 @@
                 overCapacityPercent: overCapacityPercent.toFixed(1),
                 effortResults: effortResults,
                 timelineResults: timelineResults,
-                capacityResults: capacityResults
+                capacityResults: capacityResults,
+                workloadData: workloadData
             });
         }
 
@@ -587,19 +649,26 @@
                     <div class="distribution-chart">
                         <canvas id="timelineChart"></canvas>
                     </div>
+                    
+                    <h4>Weekly Workload (${data.confidence}% Confidence Case)</h4>
+                    <div class="distribution-chart">
+                        <canvas id="workloadChart"></canvas>
+                    </div>
                 </div>
             `;
             
             resultsDiv.style.display = 'block';
-            createCharts(data.effortResults, data.timelineResults, data.capacity);
+            createCharts(data.effortResults, data.timelineResults, data.capacity, data.workloadData);
         }
 
         let effortChart = null;
         let timelineChart = null;
+        let workloadChart = null;
         
-        function createCharts(effortResults, timelineResults, capacity) {
+        function createCharts(effortResults, timelineResults, capacity, workloadData) {
             createEffortChart(effortResults, capacity);
             createTimelineChart(timelineResults);
+            createWorkloadChart(workloadData);
         }
         
         function createEffortChart(results, capacity) {
@@ -724,6 +793,65 @@
                 labels: labels,
                 data: histogram
             };
+        }
+        
+        function createWorkloadChart(workloadData) {
+            const ctx = document.getElementById('workloadChart').getContext('2d');
+            
+            if (workloadChart) {
+                workloadChart.destroy();
+            }
+            
+            if (!workloadData || !workloadData.weeklyHours || workloadData.weeklyHours.length === 0) {
+                return;
+            }
+            
+            const labels = [];
+            for (let i = 0; i < workloadData.weeklyHours.length; i++) {
+                labels.push(`Week ${i + 1}`);
+            }
+            
+            workloadChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hours Required',
+                        data: workloadData.weeklyHours.map(h => h.toFixed(1)),
+                        backgroundColor: 'rgba(230, 126, 34, 0.6)',
+                        borderColor: 'rgba(230, 126, 34, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Weekly Capacity Requirements (${workloadData.confidence}% Confidence)`
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Week'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Hours Required'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
 
         function loadFromFile() {
