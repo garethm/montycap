@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Capacity Planning</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .task-input {
+            display: grid;
+            grid-template-columns: 2fr 0.7fr 0.7fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .task-input input, .task-input select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .task-input input[type="number"] {
+            text-align: center;
+        }
+        .task-header {
+            display: grid;
+            grid-template-columns: 2fr 0.7fr 0.7fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f6f3;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .distribution-chart {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .capacity-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .capacity-good {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .setting-item input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monte Carlo Capacity Planning</h1>
+        
+        <div class="section">
+            <h3>Simulation Settings</h3>
+            <div class="settings">
+                <div class="setting-item">
+                    <label>Available Capacity (person-days)</label>
+                    <input type="number" id="capacity" value="100" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>Simulation Runs</label>
+                    <input type="number" id="simulations" value="10000" min="1000">
+                </div>
+                <div class="setting-item">
+                    <label>Confidence Level (%)</label>
+                    <input type="number" id="confidence" value="80" min="50" max="99">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Tasks & Initiatives</h3>
+            <div style="margin-bottom: 15px;">
+                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="margin-right: 10px;">
+                <button class="btn btn-secondary" onclick="loadFromFile()">Load from File</button>
+                <button class="btn btn-secondary" onclick="exportToFile()">Export to CSV</button>
+            </div>
+            <div class="task-header">
+                <div>Task Name</div>
+                <div>Quantity</div>
+                <div>Skip %</div>
+                <div>Optimistic</div>
+                <div>Expected</div>
+                <div>Pessimistic</div>
+                <div>Action</div>
+            </div>
+            <div id="tasks">
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Supplier Security Review" value="Supplier Security Review">
+                    <input type="number" placeholder="5" value="5" min="1" step="1">
+                    <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="1" value="1" min="0.1" step="0.1">
+                    <input type="number" placeholder="4" value="4" min="0.1" step="0.1">
+                    <input type="number" placeholder="12" value="12" min="0.1" step="0.1">
+                    <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Vulnerability Assessment" value="Vulnerability Assessment">
+                    <input type="number" placeholder="1" value="1" min="1" step="1">
+                    <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="3" value="3" min="0.1" step="0.1">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1">
+                    <input type="number" placeholder="15" value="15" min="0.1" step="0.1">
+                    <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Supplier Follow-up" value="Supplier Follow-up">
+                    <input type="number" placeholder="1" value="1" min="1" step="1">
+                    <input type="number" placeholder="60%" value="60" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="1" value="1" min="0.1" step="0.1">
+                    <input type="number" placeholder="3" value="3" min="0.1" step="0.1">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1">
+                    <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="addTask()">Add Task</button>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn" onclick="runSimulation()">Run Monte Carlo Simulation</button>
+        </div>
+
+        <div id="results" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let chart = null;
+
+        function addTask() {
+            const tasksDiv = document.getElementById('tasks');
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-input';
+            taskDiv.innerHTML = `
+                <input type="text" placeholder="Task name">
+                <input type="number" placeholder="Quantity" min="1" step="1" value="1">
+                <input type="number" placeholder="Skip %" min="0" max="95" step="5" value="0" title="% chance task can be skipped">
+                <input type="number" placeholder="Optimistic" min="0.1" step="0.1">
+                <input type="number" placeholder="Expected" min="0.1" step="0.1">
+                <input type="number" placeholder="Pessimistic" min="0.1" step="0.1">
+                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+            `;
+            tasksDiv.appendChild(taskDiv);
+        }
+
+        function removeTask(button) {
+            button.parentElement.remove();
+        }
+
+        function betaDistribution(alpha, beta) {
+            // Simplified beta distribution using gamma functions
+            const gamma1 = gammaRandom(alpha);
+            const gamma2 = gammaRandom(beta);
+            return gamma1 / (gamma1 + gamma2);
+        }
+
+        function gammaRandom(shape) {
+            // Marsaglia and Tsang method for gamma distribution
+            if (shape < 1) {
+                return gammaRandom(shape + 1) * Math.pow(Math.random(), 1 / shape);
+            }
+            
+            const d = shape - 1/3;
+            const c = 1 / Math.sqrt(9 * d);
+            
+            while (true) {
+                let x, v;
+                do {
+                    x = normalRandom();
+                    v = 1 + c * x;
+                } while (v <= 0);
+                
+                v = v * v * v;
+                const u = Math.random();
+                
+                if (u < 1 - 0.0331 * x * x * x * x) {
+                    return d * v;
+                }
+                
+                if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
+                    return d * v;
+                }
+            }
+        }
+
+        function normalRandom() {
+            // Box-Muller transform
+            const u = Math.random();
+            const v = Math.random();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+
+        function generateTaskEffort(optimistic, expected, pessimistic, skipPercentage = 0) {
+            // Handle optional tasks with explicit skip percentage
+            if (skipPercentage > 0) {
+                if (Math.random() < (skipPercentage / 100)) {
+                    return 0; // Task skipped
+                }
+            }
+            
+            // For required tasks (or when optional task is not skipped), use standard PERT
+            return generateTaskEffortHelper(optimistic, expected, pessimistic);
+        }
+        
+        function generateTaskEffortHelper(optimistic, expected, pessimistic) {
+            // Standard PERT/Beta distribution implementation
+            const range = pessimistic - optimistic;
+            if (range <= 0) return expected;
+            
+            // PERT uses these formulas for Beta distribution parameters
+            const mu = (optimistic + 4 * expected + pessimistic) / 6;
+            const sigma = (pessimistic - optimistic) / 6;
+            const variance = sigma * sigma;
+            
+            // Normalize to 0-1 range for Beta distribution
+            const muNorm = (mu - optimistic) / range;
+            const varianceNorm = variance / (range * range);
+            
+            // Calculate Beta parameters
+            const temp = muNorm * (1 - muNorm) / varianceNorm - 1;
+            const alpha = muNorm * temp;
+            const beta = (1 - muNorm) * temp;
+            
+            // Ensure valid parameters
+            const safeAlpha = Math.max(0.5, alpha);
+            const safeBeta = Math.max(0.5, beta);
+            
+            // Generate Beta random variable
+            const betaValue = betaDistribution(safeAlpha, safeBeta);
+            
+            // Scale back to original range
+            return optimistic + betaValue * range;
+        }
+
+        function runSimulation() {
+            const capacity = parseFloat(document.getElementById('capacity').value);
+            const simulations = parseInt(document.getElementById('simulations').value);
+            const confidence = parseFloat(document.getElementById('confidence').value);
+            
+            const tasks = [];
+            document.querySelectorAll('.task-input').forEach(taskDiv => {
+                const inputs = taskDiv.querySelectorAll('input');
+                const name = inputs[0].value;
+                const quantity = parseInt(inputs[1].value) || 1;
+                const skipPercentage = parseFloat(inputs[2].value) || 0;
+                const optimistic = parseFloat(inputs[3].value);
+                const expected = parseFloat(inputs[4].value);
+                const pessimistic = parseFloat(inputs[5].value);
+                
+                if (name && optimistic && expected && pessimistic) {
+                    tasks.push({ name, quantity, skipPercentage, optimistic, expected, pessimistic });
+                }
+            });
+
+            if (tasks.length === 0) {
+                alert('Please add at least one task');
+                return;
+            }
+
+            const results = [];
+            const capacityResults = [];
+            
+            for (let i = 0; i < simulations; i++) {
+                let totalEffort = 0;
+                tasks.forEach(task => {
+                    // For each task, generate effort for each instance (quantity)
+                    for (let j = 0; j < task.quantity; j++) {
+                        totalEffort += generateTaskEffort(task.optimistic, task.expected, task.pessimistic, task.skipPercentage);
+                    }
+                });
+                results.push(totalEffort);
+                capacityResults.push(capacity - totalEffort);
+            }
+
+            results.sort((a, b) => a - b);
+            capacityResults.sort((a, b) => a - b);
+
+            const mean = results.reduce((sum, val) => sum + val, 0) / results.length;
+            const p10 = results[Math.floor(results.length * 0.1)];
+            const p50 = results[Math.floor(results.length * 0.5)];
+            const p90 = results[Math.floor(results.length * 0.9)];
+            const confidenceIndex = Math.floor(results.length * confidence / 100);
+            const confidenceValue = results[confidenceIndex];
+
+            const overCapacityCount = results.filter(r => r > capacity).length;
+            const overCapacityPercent = (overCapacityCount / results.length) * 100;
+
+            displayResults({
+                mean: mean.toFixed(1),
+                p10: p10.toFixed(1),
+                p50: p50.toFixed(1),
+                p90: p90.toFixed(1),
+                confidenceValue: confidenceValue.toFixed(1),
+                confidence: confidence,
+                capacity: capacity,
+                overCapacityPercent: overCapacityPercent.toFixed(1),
+                results: results,
+                capacityResults: capacityResults
+            });
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let capacityMessage = '';
+            if (data.overCapacityPercent > 20) {
+                capacityMessage = `<div class="capacity-warning">
+                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    Consider reducing scope or increasing capacity.
+                </div>`;
+            } else if (data.overCapacityPercent > 5) {
+                capacityMessage = `<div class="capacity-warning">
+                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    Monitor closely and have contingency plans.
+                </div>`;
+            } else {
+                capacityMessage = `<div class="capacity-good">
+                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    Reasonable buffer for unexpected work.
+                </div>`;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="results">
+                    <h3>Simulation Results</h3>
+                    <div class="results-grid">
+                        <div class="metric">
+                            <div class="metric-value">${data.mean}</div>
+                            <div class="metric-label">Mean Effort</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.p50}</div>
+                            <div class="metric-label">Median (P50)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.confidenceValue}</div>
+                            <div class="metric-label">${data.confidence}% Confidence</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.p90}</div>
+                            <div class="metric-label">P90 (Worst Case)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.capacity}</div>
+                            <div class="metric-label">Available Capacity</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.overCapacityPercent}%</div>
+                            <div class="metric-label">Over Capacity Risk</div>
+                        </div>
+                    </div>
+                    ${capacityMessage}
+                    <div class="distribution-chart">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.style.display = 'block';
+            createChart(data.results, data.capacity);
+        }
+
+        function createChart(results, capacity) {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Create histogram
+            const min = Math.min(...results);
+            const max = Math.max(...results);
+            const bins = 50;
+            const binSize = (max - min) / bins;
+            const histogram = new Array(bins).fill(0);
+            
+            results.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binSize), bins - 1);
+                histogram[binIndex]++;
+            });
+            
+            const labels = [];
+            for (let i = 0; i < bins; i++) {
+                labels.push((min + i * binSize).toFixed(1));
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histogram,
+                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Effort Distribution'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Total Effort (person-days)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        }
+                    },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                capacityLine: {
+                                    type: 'line',
+                                    xMin: capacity,
+                                    xMax: capacity,
+                                    borderColor: 'red',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Capacity',
+                                        enabled: true,
+                                        position: 'top'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadFromFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+                
+                if (file.name.endsWith('.csv')) {
+                    parseCSV(data);
+                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    parseExcel(data);
+                }
+            };
+            
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        
+        function parseCSV(data) {
+            const lines = data.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            
+            // Clear existing tasks
+            document.getElementById('tasks').innerHTML = '';
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                if (values.length >= 5) {
+                    addTaskFromData(values[0], values[1], values[2], values[3], values[4]);
+                }
+            }
+        }
+        
+        function parseExcel(data) {
+            // For Excel files, we'd need a library like SheetJS
+            // For now, show a message to convert to CSV
+            alert('Excel support coming soon. Please convert to CSV format for now.');
+        }
+        
+        function addTaskFromData(name, quantity, optimistic, expected, pessimistic) {
+            const tasksDiv = document.getElementById('tasks');
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-input';
+            taskDiv.innerHTML = `
+                <input type="text" value="${name}">
+                <input type="number" value="${quantity}" min="1" step="1">
+                <input type="number" value="${optimistic}" min="0.1" step="0.1">
+                <input type="number" value="${expected}" min="0.1" step="0.1">
+                <input type="number" value="${pessimistic}" min="0.1" step="0.1">
+                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+            `;
+            tasksDiv.appendChild(taskDiv);
+        }
+        
+        function exportToFile() {
+            const tasks = [];
+            document.querySelectorAll('.task-input').forEach(taskDiv => {
+                const inputs = taskDiv.querySelectorAll('input');
+                const name = inputs[0].value;
+                const quantity = inputs[1].value;
+                const optimistic = inputs[2].value;
+                const expected = inputs[3].value;
+                const pessimistic = inputs[4].value;
+                
+                if (name) {
+                    tasks.push([name, quantity, optimistic, expected, pessimistic]);
+                }
+            });
+            
+            let csvContent = 'Task Name,Quantity,Optimistic,Expected,Pessimistic\n';
+            tasks.forEach(task => {
+                csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'capacity_planning_tasks.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize with default simulation
+        window.addEventListener('load', function() {
+            setTimeout(runSimulation, 500);
+        });
+    </script>
+</body>
+</html>
