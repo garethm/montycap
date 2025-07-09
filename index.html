@@ -161,6 +161,61 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        .executive-summary {
+            margin-top: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #e67e22;
+        }
+        .executive-summary h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .summary-card h4 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .scenario-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .scenario-item:last-child {
+            border-bottom: none;
+        }
+        .scenario-label {
+            font-weight: 500;
+            color: #7f8c8d;
+        }
+        .scenario-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .risk-low {
+            color: #27ae60 !important;
+        }
+        .risk-medium {
+            color: #f39c12 !important;
+        }
+        .risk-high {
+            color: #e74c3c !important;
+        }
     </style>
 </head>
 <body>
@@ -623,12 +678,83 @@
             }
         }
         
-        function calculateWorkloadDistribution(workSchedules, confidenceIndex, confidence, weeklyCapacity) {
-            // Get the work schedule from the confidence percentile simulation
-            const targetSchedule = workSchedules[confidenceIndex];
+        function findConfidenceRangeSimulations(simulationData, confidenceTimeline, confidence) {
+            // Get the confidence index range (e.g., for 80%, look at 78-82% range)
+            const confidenceIndex = Math.floor(simulationData.length * confidence / 100);
+            const rangeSize = Math.max(Math.floor(simulationData.length * 0.02), 5); // 2% of simulations or minimum 5
             
+            const startIndex = Math.max(0, confidenceIndex - Math.floor(rangeSize / 2));
+            const endIndex = Math.min(simulationData.length - 1, startIndex + rangeSize - 1);
+            
+            // Take simulations from the confidence range (already sorted by timeline)
+            const rangeSimulations = simulationData.slice(startIndex, endIndex + 1);
+            
+            console.log('Confidence Range:', {
+                targetIndex: confidenceIndex,
+                rangeStart: startIndex,
+                rangeEnd: endIndex,
+                simulationsUsed: rangeSimulations.length,
+                timelineRange: `${rangeSimulations[0]?.timeline.toFixed(1)} - ${rangeSimulations[rangeSimulations.length-1]?.timeline.toFixed(1)} days`,
+                effortRange: `${Math.min(...rangeSimulations.map(s => s.effort)).toFixed(1)} - ${Math.max(...rangeSimulations.map(s => s.effort)).toFixed(1)} hours`
+            });
+            
+            return rangeSimulations;
+        }
+        
+        function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
+            if (!confidenceSimulations || confidenceSimulations.length === 0) {
+                return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity, simulationCount: 0 };
+            }
+            
+            // Calculate workload for each simulation
+            const allWorkloads = confidenceSimulations.map(sim => 
+                calculateSingleWorkloadDistribution(sim.workSchedule)
+            );
+            
+            // Find the maximum number of weeks across all simulations
+            const maxWeek = Math.max(...allWorkloads.map(w => w.maxWeek));
+            
+            // Initialize arrays for aggregation
+            const weeklyHoursSums = new Array(maxWeek).fill(0);
+            const weeklyHoursCounts = new Array(maxWeek).fill(0);
+            
+            // Aggregate weekly hours
+            allWorkloads.forEach(workload => {
+                workload.weeklyHours.forEach((hours, week) => {
+                    if (week < maxWeek) {
+                        weeklyHoursSums[week] += hours;
+                        weeklyHoursCounts[week] += 1;
+                    }
+                });
+            });
+            
+            // Calculate mean weekly hours
+            const weeklyHours = weeklyHoursSums.map((sum, week) => 
+                weeklyHoursCounts[week] > 0 ? sum / weeklyHoursCounts[week] : 0
+            );
+            
+            // Debug: Check total workload hours
+            const totalWorkloadHours = weeklyHours.reduce((sum, hours) => sum + hours, 0);
+            console.log('Workload Total Check:', {
+                weeklyHoursSum: totalWorkloadHours.toFixed(1),
+                targetEffort: debugInfo.averageEffort,
+                difference: (totalWorkloadHours - parseFloat(debugInfo.averageEffort)).toFixed(1)
+            });
+            
+            return {
+                weeklyHours: weeklyHours,
+                maxWeek: maxWeek,
+                confidence: confidence,
+                weeklyCapacity: weeklyCapacity,
+                simulationCount: confidenceSimulations.length,
+                totalHours: totalWorkloadHours
+            };
+        }
+        
+        function calculateSingleWorkloadDistribution(targetSchedule) {
+            // Calculate workload for a single simulation
             if (!targetSchedule || targetSchedule.length === 0) {
-                return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity };
+                return { weeklyHours: [], maxWeek: 0 };
             }
             
             // Find the maximum end day to determine number of work weeks
@@ -663,9 +789,7 @@
             
             return {
                 weeklyHours: weeklyHours,
-                maxWeek: maxWeek,
-                confidence: confidence,
-                weeklyCapacity: weeklyCapacity
+                maxWeek: maxWeek
             };
         }
         
@@ -762,6 +886,7 @@
             const timelineResults = [];
             const capacityResults = [];
             const workSchedules = [];
+            const simulationData = []; // Track simulation index with results
             
             // Run simulations in batches to prevent UI blocking
             const batchSize = 100;
@@ -778,6 +903,14 @@
                     timelineResults.push(simulation.totalTime); // Days
                     capacityResults.push(capacity - simulation.totalEffort); // Hours
                     workSchedules.push(simulation.workSchedule);
+                    
+                    // Track which simulation produced which results
+                    simulationData.push({
+                        index: i,
+                        effort: simulation.totalEffort,
+                        timeline: simulation.totalTime,
+                        workSchedule: simulation.workSchedule
+                    });
                 }
                 
                 // Update progress
@@ -790,6 +923,10 @@
                 }
             }
 
+            // Sort simulation data by timeline to find the confidence case
+            simulationData.sort((a, b) => a.timeline - b.timeline);
+            
+            // Extract sorted results
             effortResults.sort((a, b) => a - b);
             timelineResults.sort((a, b) => a - b);
             capacityResults.sort((a, b) => a - b);
@@ -812,8 +949,23 @@
             const overCapacityCount = effortResults.filter(r => r > capacity).length;
             const overCapacityPercent = (overCapacityCount / effortResults.length) * 100;
             
-            // Calculate workload distribution for confidence level
-            const workloadData = calculateWorkloadDistribution(workSchedules, timelineConfidenceIndex, confidence, weeklyCapacity);
+            // Find all simulations within tolerance of the timeline confidence case
+            const confidenceSimulations = findConfidenceRangeSimulations(simulationData, timelineConfidenceValue, confidence);
+            
+            // Debug: Check what we're averaging
+            const debugInfo = {
+                targetTimeline: timelineConfidenceValue,
+                targetEffort: effortConfidenceValue,
+                actualSimulations: confidenceSimulations.map(s => ({
+                    effort: s.effort.toFixed(1),
+                    timeline: s.timeline.toFixed(1)
+                })),
+                averageEffort: (confidenceSimulations.reduce((sum, s) => sum + s.effort, 0) / confidenceSimulations.length).toFixed(1)
+            };
+            console.log('Workload Debug:', debugInfo);
+            
+            // Calculate workload distribution as average of similar simulations
+            const workloadData = calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo);
 
             displayResults({
                 effort: {
@@ -922,9 +1074,48 @@
                         <canvas id="timelineChart"></canvas>
                     </div>
                     
-                    <h4>Weekly Workload (${data.confidence}% Confidence Case)</h4>
+                    <h4>Weekly Workload (${data.confidence}% Confidence Case - ${data.workloadData.simulationCount} simulations)</h4>
                     <div class="distribution-chart">
                         <canvas id="workloadChart"></canvas>
+                    </div>
+                    
+                    <div class="executive-summary">
+                        <h3>Executive Summary</h3>
+                        <div class="summary-grid">
+                            <div class="summary-card">
+                                <h4>Planning Scenarios</h4>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Most Likely Outcome:</span>
+                                    <span class="scenario-value">${data.effort.p50} hours over ${data.timeline.p50} business days</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Conservative Planning:</span>
+                                    <span class="scenario-value">${data.effort.confidenceValue} hours over ${data.timeline.confidenceValue} business days</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Contingency Planning:</span>
+                                    <span class="scenario-value">${data.effort.p90} hours over ${data.timeline.p90} business days</span>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-card">
+                                <h4>Resource Requirements</h4>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Expected Weekly Capacity:</span>
+                                    <span class="scenario-value">${(data.workloadData.totalHours / data.workloadData.maxWeek).toFixed(1)} hours/week</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Peak Weekly Demand:</span>
+                                    <span class="scenario-value">${Math.max(...data.workloadData.weeklyHours).toFixed(1)} hours</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Capacity Risk Level:</span>
+                                    <span class="scenario-value risk-${data.overCapacityPercent > 20 ? 'high' : data.overCapacityPercent > 5 ? 'medium' : 'low'}">
+                                        ${data.overCapacityPercent > 20 ? 'High' : data.overCapacityPercent > 5 ? 'Moderate' : 'Low'} (${data.overCapacityPercent}% chance of exceeding capacity)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1118,7 +1309,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: `Weekly Capacity Requirements (${workloadData.confidence}% Confidence)`
+                            text: `Weekly Capacity Requirements (${workloadData.confidence}% Confidence - ${workloadData.simulationCount} simulations)`
                         },
                         legend: {
                             display: true
