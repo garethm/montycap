@@ -188,7 +188,7 @@
         <div class="section">
             <h3>Tasks & Initiatives</h3>
             <div style="margin-bottom: 15px;">
-                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="margin-right: 10px;">
+                <input type="file" id="fileInput" accept=".csv" style="margin-right: 10px;">
                 <button class="btn btn-secondary" onclick="loadFromFile()">Load from File</button>
                 <button class="btn btn-secondary" onclick="exportToFile()">Export to CSV</button>
             </div>
@@ -576,15 +576,11 @@
                 
                 if (file.name.endsWith('.csv')) {
                     parseCSV(data);
-                } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    parseExcel(data);
                 }
             };
             
             if (file.name.endsWith('.csv')) {
                 reader.readAsText(file);
-            } else {
-                reader.readAsArrayBuffer(file);
             }
         }
         
@@ -601,12 +597,6 @@
                     addTaskFromData(values[0], values[1], values[2], values[3], values[4]);
                 }
             }
-        }
-        
-        function parseExcel(data) {
-            // For Excel files, we'd need a library like SheetJS
-            // For now, show a message to convert to CSV
-            alert('Excel support coming soon. Please convert to CSV format for now.');
         }
         
         function addTaskFromData(name, quantity, optimistic, expected, pessimistic) {
