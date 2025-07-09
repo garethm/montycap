@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monte Carlo Capacity Planning</title>
+    <title>Monte Carlo Timeline & Capacity Planning</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -32,7 +32,7 @@
         }
         .task-input {
             display: grid;
-            grid-template-columns: 2fr 0.7fr 0.7fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
             gap: 10px;
             margin-bottom: 10px;
             align-items: center;
@@ -48,7 +48,7 @@
         }
         .task-header {
             display: grid;
-            grid-template-columns: 2fr 0.7fr 0.7fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
             gap: 10px;
             margin-bottom: 15px;
             font-weight: bold;
@@ -165,14 +165,18 @@
 </head>
 <body>
     <div class="container">
-        <h1>Monte Carlo Capacity Planning</h1>
+        <h1>Monte Carlo Timeline & Capacity Planning</h1>
         
         <div class="section">
             <h3>Simulation Settings</h3>
             <div class="settings">
                 <div class="setting-item">
-                    <label>Available Capacity (person-days)</label>
-                    <input type="number" id="capacity" value="100" min="1">
+                    <label>Available Capacity (person-hours)</label>
+                    <input type="number" id="capacity" value="800" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>Program Quantity</label>
+                    <input type="number" id="programQuantity" value="3" min="1" title="Number of parallel series to execute">
                 </div>
                 <div class="setting-item">
                     <label>Simulation Runs</label>
@@ -181,6 +185,10 @@
                 <div class="setting-item">
                     <label>Confidence Level (%)</label>
                     <input type="number" id="confidence" value="80" min="50" max="99">
+                </div>
+                <div class="setting-item">
+                    <label>Hours per Work Day</label>
+                    <input type="number" id="hoursPerDay" value="8" min="1" max="24" title="Hours per work day for timeline calculation">
                 </div>
             </div>
         </div>
@@ -194,39 +202,47 @@
             </div>
             <div class="task-header">
                 <div>Task Name</div>
-                <div>Quantity</div>
                 <div>Skip %</div>
-                <div>Optimistic</div>
-                <div>Expected</div>
-                <div>Pessimistic</div>
+                <div>Work Opt (hrs)</div>
+                <div>Work Exp (hrs)</div>
+                <div>Work Pess (hrs)</div>
+                <div>Wait Opt</div>
+                <div>Wait Exp</div>
+                <div>Wait Pess</div>
                 <div>Action</div>
             </div>
             <div id="tasks">
                 <div class="task-input">
                     <input type="text" placeholder="e.g., Supplier Security Review" value="Supplier Security Review">
-                    <input type="number" placeholder="5" value="5" min="1" step="1">
                     <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
-                    <input type="number" placeholder="1" value="1" min="0.1" step="0.1">
-                    <input type="number" placeholder="4" value="4" min="0.1" step="0.1">
-                    <input type="number" placeholder="12" value="12" min="0.1" step="0.1">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="32" value="32" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="96" value="96" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="0" value="0" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="2" value="2" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="5" value="5" min="0" step="0.1" title="Wait time pessimistic">
                     <button class="remove-btn" onclick="removeTask(this)">Remove</button>
                 </div>
                 <div class="task-input">
                     <input type="text" placeholder="e.g., Vulnerability Assessment" value="Vulnerability Assessment">
-                    <input type="number" placeholder="1" value="1" min="1" step="1">
                     <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
-                    <input type="number" placeholder="3" value="3" min="0.1" step="0.1">
-                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1">
-                    <input type="number" placeholder="15" value="15" min="0.1" step="0.1">
+                    <input type="number" placeholder="24" value="24" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="64" value="64" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="120" value="120" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="1" value="1" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="3" value="3" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="7" value="7" min="0" step="0.1" title="Wait time pessimistic">
                     <button class="remove-btn" onclick="removeTask(this)">Remove</button>
                 </div>
                 <div class="task-input">
                     <input type="text" placeholder="e.g., Supplier Follow-up" value="Supplier Follow-up">
-                    <input type="number" placeholder="1" value="1" min="1" step="1">
                     <input type="number" placeholder="60%" value="60" min="0" max="95" step="5" title="% chance task can be skipped">
-                    <input type="number" placeholder="1" value="1" min="0.1" step="0.1">
-                    <input type="number" placeholder="3" value="3" min="0.1" step="0.1">
-                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="24" value="24" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="64" value="64" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="0" value="0" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="1" value="1" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="3" value="3" min="0" step="0.1" title="Wait time pessimistic">
                     <button class="remove-btn" onclick="removeTask(this)">Remove</button>
                 </div>
             </div>
@@ -234,7 +250,7 @@
         </div>
 
         <div style="text-align: center;">
-            <button class="btn" onclick="runSimulation()">Run Monte Carlo Simulation</button>
+            <button class="btn" onclick="runSimulation()">Run Timeline & Capacity Simulation</button>
         </div>
 
         <div id="results" style="display: none;"></div>
@@ -242,7 +258,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
-        let chart = null;
+        let chart = null; // Keep for backward compatibility
 
         function addTask() {
             const tasksDiv = document.getElementById('tasks');
@@ -250,11 +266,13 @@
             taskDiv.className = 'task-input';
             taskDiv.innerHTML = `
                 <input type="text" placeholder="Task name">
-                <input type="number" placeholder="Quantity" min="1" step="1" value="1">
                 <input type="number" placeholder="Skip %" min="0" max="95" step="5" value="0" title="% chance task can be skipped">
-                <input type="number" placeholder="Optimistic" min="0.1" step="0.1">
-                <input type="number" placeholder="Expected" min="0.1" step="0.1">
-                <input type="number" placeholder="Pessimistic" min="0.1" step="0.1">
+                <input type="number" placeholder="Work Opt" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                <input type="number" placeholder="Work Exp" min="0.1" step="0.1" title="Work effort expected (hours)">
+                <input type="number" placeholder="Work Pess" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                <input type="number" placeholder="Wait Opt" min="0" step="0.1" value="0" title="Wait time optimistic">
+                <input type="number" placeholder="Wait Exp" min="0" step="0.1" value="0" title="Wait time expected">
+                <input type="number" placeholder="Wait Pess" min="0" step="0.1" value="0" title="Wait time pessimistic">
                 <button class="remove-btn" onclick="removeTask(this)">Remove</button>
             `;
             tasksDiv.appendChild(taskDiv);
@@ -318,6 +336,54 @@
             // For required tasks (or when optional task is not skipped), use standard PERT
             return generateTaskEffortHelper(optimistic, expected, pessimistic);
         }
+
+        function simulateProgram(tasks, programQuantity, hoursPerDay = 8) {
+            // Create timeline for each series (parallel execution)
+            const seriesTimelines = [];
+            let totalEffort = 0; // Total effort in hours
+            
+            for (let series = 0; series < programQuantity; series++) {
+                let seriesTime = 0; // Timeline in days
+                let seriesEffort = 0; // Effort in hours
+                
+                // Execute tasks sequentially within each series
+                for (let taskIndex = 0; taskIndex < tasks.length; taskIndex++) {
+                    const task = tasks[taskIndex];
+                    
+                    // Check if task is skipped
+                    if (task.skipPercentage > 0 && Math.random() < (task.skipPercentage / 100)) {
+                        continue; // Skip this task
+                    }
+                    
+                    // Generate work effort in hours
+                    const workEffortHours = generateTaskEffortHelper(task.work.optimistic, task.work.expected, task.work.pessimistic);
+                    
+                    // Generate wait time in days
+                    const waitTimeDays = generateTaskEffortHelper(task.wait.optimistic, task.wait.expected, task.wait.pessimistic);
+                    
+                    // Convert work hours to days for timeline calculation
+                    const workDays = workEffortHours / hoursPerDay;
+                    
+                    // Add to series timeline (work days + wait days)
+                    seriesTime += workDays + waitTimeDays;
+                    
+                    // Add to series effort (only work hours count toward capacity)
+                    seriesEffort += workEffortHours;
+                }
+                
+                seriesTimelines.push(seriesTime);
+                totalEffort += seriesEffort;
+            }
+            
+            // Total timeline is the maximum of all series (parallel execution)
+            const totalTime = Math.max(...seriesTimelines);
+            
+            return {
+                totalEffort: totalEffort, // Total effort in hours
+                totalTime: totalTime, // Total timeline in days
+                seriesTimelines: seriesTimelines
+            };
+        }
         
         function generateTaskEffortHelper(optimistic, expected, pessimistic) {
             // Standard PERT/Beta distribution implementation
@@ -351,21 +417,30 @@
 
         function runSimulation() {
             const capacity = parseFloat(document.getElementById('capacity').value);
+            const programQuantity = parseInt(document.getElementById('programQuantity').value);
             const simulations = parseInt(document.getElementById('simulations').value);
             const confidence = parseFloat(document.getElementById('confidence').value);
+            const hoursPerDay = parseFloat(document.getElementById('hoursPerDay').value);
             
             const tasks = [];
             document.querySelectorAll('.task-input').forEach(taskDiv => {
                 const inputs = taskDiv.querySelectorAll('input');
                 const name = inputs[0].value;
-                const quantity = parseInt(inputs[1].value) || 1;
-                const skipPercentage = parseFloat(inputs[2].value) || 0;
-                const optimistic = parseFloat(inputs[3].value);
-                const expected = parseFloat(inputs[4].value);
-                const pessimistic = parseFloat(inputs[5].value);
+                const skipPercentage = parseFloat(inputs[1].value) || 0;
+                const workOptimistic = parseFloat(inputs[2].value);
+                const workExpected = parseFloat(inputs[3].value);
+                const workPessimistic = parseFloat(inputs[4].value);
+                const waitOptimistic = parseFloat(inputs[5].value) || 0;
+                const waitExpected = parseFloat(inputs[6].value) || 0;
+                const waitPessimistic = parseFloat(inputs[7].value) || 0;
                 
-                if (name && optimistic && expected && pessimistic) {
-                    tasks.push({ name, quantity, skipPercentage, optimistic, expected, pessimistic });
+                if (name && workOptimistic && workExpected && workPessimistic) {
+                    tasks.push({ 
+                        name, 
+                        skipPercentage, 
+                        work: { optimistic: workOptimistic, expected: workExpected, pessimistic: workPessimistic },
+                        wait: { optimistic: waitOptimistic, expected: waitExpected, pessimistic: waitPessimistic }
+                    });
                 }
             });
 
@@ -374,44 +449,59 @@
                 return;
             }
 
-            const results = [];
+            const effortResults = [];
+            const timelineResults = [];
             const capacityResults = [];
             
             for (let i = 0; i < simulations; i++) {
-                let totalEffort = 0;
-                tasks.forEach(task => {
-                    // For each task, generate effort for each instance (quantity)
-                    for (let j = 0; j < task.quantity; j++) {
-                        totalEffort += generateTaskEffort(task.optimistic, task.expected, task.pessimistic, task.skipPercentage);
-                    }
-                });
-                results.push(totalEffort);
-                capacityResults.push(capacity - totalEffort);
+                const simulation = simulateProgram(tasks, programQuantity, hoursPerDay);
+                effortResults.push(simulation.totalEffort); // Hours
+                timelineResults.push(simulation.totalTime); // Days
+                capacityResults.push(capacity - simulation.totalEffort); // Hours
             }
 
-            results.sort((a, b) => a - b);
+            effortResults.sort((a, b) => a - b);
+            timelineResults.sort((a, b) => a - b);
             capacityResults.sort((a, b) => a - b);
 
-            const mean = results.reduce((sum, val) => sum + val, 0) / results.length;
-            const p10 = results[Math.floor(results.length * 0.1)];
-            const p50 = results[Math.floor(results.length * 0.5)];
-            const p90 = results[Math.floor(results.length * 0.9)];
-            const confidenceIndex = Math.floor(results.length * confidence / 100);
-            const confidenceValue = results[confidenceIndex];
+            const effortMean = effortResults.reduce((sum, val) => sum + val, 0) / effortResults.length;
+            const timelineMean = timelineResults.reduce((sum, val) => sum + val, 0) / timelineResults.length;
+            
+            const effortP10 = effortResults[Math.floor(effortResults.length * 0.1)];
+            const effortP50 = effortResults[Math.floor(effortResults.length * 0.5)];
+            const effortP90 = effortResults[Math.floor(effortResults.length * 0.9)];
+            const effortConfidenceIndex = Math.floor(effortResults.length * confidence / 100);
+            const effortConfidenceValue = effortResults[effortConfidenceIndex];
 
-            const overCapacityCount = results.filter(r => r > capacity).length;
-            const overCapacityPercent = (overCapacityCount / results.length) * 100;
+            const timelineP10 = timelineResults[Math.floor(timelineResults.length * 0.1)];
+            const timelineP50 = timelineResults[Math.floor(timelineResults.length * 0.5)];
+            const timelineP90 = timelineResults[Math.floor(timelineResults.length * 0.9)];
+            const timelineConfidenceIndex = Math.floor(timelineResults.length * confidence / 100);
+            const timelineConfidenceValue = timelineResults[timelineConfidenceIndex];
+
+            const overCapacityCount = effortResults.filter(r => r > capacity).length;
+            const overCapacityPercent = (overCapacityCount / effortResults.length) * 100;
 
             displayResults({
-                mean: mean.toFixed(1),
-                p10: p10.toFixed(1),
-                p50: p50.toFixed(1),
-                p90: p90.toFixed(1),
-                confidenceValue: confidenceValue.toFixed(1),
+                effort: {
+                    mean: effortMean.toFixed(1),
+                    p10: effortP10.toFixed(1),
+                    p50: effortP50.toFixed(1),
+                    p90: effortP90.toFixed(1),
+                    confidenceValue: effortConfidenceValue.toFixed(1)
+                },
+                timeline: {
+                    mean: timelineMean.toFixed(1),
+                    p10: timelineP10.toFixed(1),
+                    p50: timelineP50.toFixed(1),
+                    p90: timelineP90.toFixed(1),
+                    confidenceValue: timelineConfidenceValue.toFixed(1)
+                },
                 confidence: confidence,
                 capacity: capacity,
                 overCapacityPercent: overCapacityPercent.toFixed(1),
-                results: results,
+                effortResults: effortResults,
+                timelineResults: timelineResults,
                 capacityResults: capacityResults
             });
         }
@@ -422,17 +512,17 @@
             let capacityMessage = '';
             if (data.overCapacityPercent > 20) {
                 capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours. 
                     Consider reducing scope or increasing capacity.
                 </div>`;
             } else if (data.overCapacityPercent > 5) {
                 capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours. 
                     Monitor closely and have contingency plans.
                 </div>`;
             } else {
                 capacityMessage = `<div class="capacity-good">
-                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding capacity. 
+                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding available hours. 
                     Reasonable buffer for unexpected work.
                 </div>`;
             }
@@ -440,26 +530,28 @@
             resultsDiv.innerHTML = `
                 <div class="results">
                     <h3>Simulation Results</h3>
+                    
+                    <h4>Effort Analysis (person-hours)</h4>
                     <div class="results-grid">
                         <div class="metric">
-                            <div class="metric-value">${data.mean}</div>
-                            <div class="metric-label">Mean Effort</div>
+                            <div class="metric-value">${data.effort.mean}</div>
+                            <div class="metric-label">Mean Effort (hrs)</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${data.p50}</div>
-                            <div class="metric-label">Median (P50)</div>
+                            <div class="metric-value">${data.effort.p50}</div>
+                            <div class="metric-label">Median (P50) hrs</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${data.confidenceValue}</div>
-                            <div class="metric-label">${data.confidence}% Confidence</div>
+                            <div class="metric-value">${data.effort.confidenceValue}</div>
+                            <div class="metric-label">${data.confidence}% Confidence (hrs)</div>
                         </div>
                         <div class="metric">
-                            <div class="metric-value">${data.p90}</div>
-                            <div class="metric-label">P90 (Worst Case)</div>
+                            <div class="metric-value">${data.effort.p90}</div>
+                            <div class="metric-label">P90 (Worst Case) hrs</div>
                         </div>
                         <div class="metric">
                             <div class="metric-value">${data.capacity}</div>
-                            <div class="metric-label">Available Capacity</div>
+                            <div class="metric-label">Available Capacity (hrs)</div>
                         </div>
                         <div class="metric">
                             <div class="metric-value">${data.overCapacityPercent}%</div>
@@ -467,27 +559,154 @@
                         </div>
                     </div>
                     ${capacityMessage}
+                    
+                    <h4>Timeline Analysis (days)</h4>
+                    <div class="results-grid">
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.mean}</div>
+                            <div class="metric-label">Mean Timeline</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.p50}</div>
+                            <div class="metric-label">Median (P50)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.confidenceValue}</div>
+                            <div class="metric-label">${data.confidence}% Confidence</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.p90}</div>
+                            <div class="metric-label">P90 (Worst Case)</div>
+                        </div>
+                    </div>
+                    
                     <div class="distribution-chart">
-                        <canvas id="distributionChart"></canvas>
+                        <canvas id="effortChart"></canvas>
+                    </div>
+                    
+                    <div class="distribution-chart">
+                        <canvas id="timelineChart"></canvas>
                     </div>
                 </div>
             `;
             
             resultsDiv.style.display = 'block';
-            createChart(data.results, data.capacity);
+            createCharts(data.effortResults, data.timelineResults, data.capacity);
         }
 
-        function createChart(results, capacity) {
-            const ctx = document.getElementById('distributionChart').getContext('2d');
+        let effortChart = null;
+        let timelineChart = null;
+        
+        function createCharts(effortResults, timelineResults, capacity) {
+            createEffortChart(effortResults, capacity);
+            createTimelineChart(timelineResults);
+        }
+        
+        function createEffortChart(results, capacity) {
+            const ctx = document.getElementById('effortChart').getContext('2d');
             
-            if (chart) {
-                chart.destroy();
+            if (effortChart) {
+                effortChart.destroy();
             }
             
-            // Create histogram
+            const histogram = createHistogram(results, 50);
+            
+            effortChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: histogram.labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histogram.data,
+                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Effort Distribution (person-hours)'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Total Effort (person-hours)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createTimelineChart(results) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            const histogram = createHistogram(results, 50);
+            
+            timelineChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: histogram.labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histogram.data,
+                        backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Timeline Distribution'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Total Timeline (days)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createHistogram(results, bins) {
             const min = Math.min(...results);
             const max = Math.max(...results);
-            const bins = 50;
             const binSize = (max - min) / bins;
             const histogram = new Array(bins).fill(0);
             
@@ -501,64 +720,10 @@
                 labels.push((min + i * binSize).toFixed(1));
             }
             
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Frequency',
-                        data: histogram,
-                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
-                        borderColor: 'rgba(52, 152, 219, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Total Effort Distribution'
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Total Effort (person-days)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Frequency'
-                            }
-                        }
-                    },
-                    plugins: {
-                        annotation: {
-                            annotations: {
-                                capacityLine: {
-                                    type: 'line',
-                                    xMin: capacity,
-                                    xMax: capacity,
-                                    borderColor: 'red',
-                                    borderWidth: 2,
-                                    label: {
-                                        content: 'Capacity',
-                                        enabled: true,
-                                        position: 'top'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            return {
+                labels: labels,
+                data: histogram
+            };
         }
 
         function loadFromFile() {
@@ -593,22 +758,25 @@
             
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-                if (values.length >= 5) {
-                    addTaskFromData(values[0], values[1], values[2], values[3], values[4]);
+                if (values.length >= 8) {
+                    addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
                 }
             }
         }
         
-        function addTaskFromData(name, quantity, optimistic, expected, pessimistic) {
+        function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess) {
             const tasksDiv = document.getElementById('tasks');
             const taskDiv = document.createElement('div');
             taskDiv.className = 'task-input';
             taskDiv.innerHTML = `
                 <input type="text" value="${name}">
-                <input type="number" value="${quantity}" min="1" step="1">
-                <input type="number" value="${optimistic}" min="0.1" step="0.1">
-                <input type="number" value="${expected}" min="0.1" step="0.1">
-                <input type="number" value="${pessimistic}" min="0.1" step="0.1">
+                <input type="number" value="${skipPercentage}" min="0" max="95" step="5">
+                <input type="number" value="${workOpt}" min="0.1" step="0.1">
+                <input type="number" value="${workExp}" min="0.1" step="0.1">
+                <input type="number" value="${workPess}" min="0.1" step="0.1">
+                <input type="number" value="${waitOpt}" min="0" step="0.1">
+                <input type="number" value="${waitExp}" min="0" step="0.1">
+                <input type="number" value="${waitPess}" min="0" step="0.1">
                 <button class="remove-btn" onclick="removeTask(this)">Remove</button>
             `;
             tasksDiv.appendChild(taskDiv);
@@ -619,26 +787,29 @@
             document.querySelectorAll('.task-input').forEach(taskDiv => {
                 const inputs = taskDiv.querySelectorAll('input');
                 const name = inputs[0].value;
-                const quantity = inputs[1].value;
-                const optimistic = inputs[2].value;
-                const expected = inputs[3].value;
-                const pessimistic = inputs[4].value;
+                const skipPercentage = inputs[1].value;
+                const workOpt = inputs[2].value;
+                const workExp = inputs[3].value;
+                const workPess = inputs[4].value;
+                const waitOpt = inputs[5].value;
+                const waitExp = inputs[6].value;
+                const waitPess = inputs[7].value;
                 
                 if (name) {
-                    tasks.push([name, quantity, optimistic, expected, pessimistic]);
+                    tasks.push([name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess]);
                 }
             });
             
-            let csvContent = 'Task Name,Quantity,Optimistic,Expected,Pessimistic\n';
+            let csvContent = 'Task Name,Skip %,Work Optimistic (hrs),Work Expected (hrs),Work Pessimistic (hrs),Wait Optimistic (days),Wait Expected (days),Wait Pessimistic (days)\n';
             tasks.forEach(task => {
-                csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]}\n`;
+                csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
             });
             
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'capacity_planning_tasks.csv';
+            a.download = 'timeline_planning_tasks.csv';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
