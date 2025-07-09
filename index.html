@@ -387,7 +387,7 @@
                         hours: workEffortHours,
                         waitDays: waitTimeDays,
                         earliestStart: seriesTime
-                    }, dailyCapacity);
+                    }, dailyCapacity, hoursPerDay);
                     
                     // Add chunks to work items
                     workItems.push(...taskChunks);
@@ -408,7 +408,7 @@
             };
         }
         
-        function chunkTask(taskItem, dailyCapacity) {
+        function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
             const chunks = [];
             const maxChunkSize = Math.min(dailyCapacity, taskItem.hours); // Don't exceed daily capacity or total hours
             
@@ -441,8 +441,8 @@
                 remainingHours -= chunkHours;
                 chunkIndex++;
                 
-                // Next chunk can start immediately after this one (but scheduling may add delays)
-                currentStart += chunkHours / 8; // Assume 8 hours per day for now
+                // Next chunk can start immediately after this one in work days
+                currentStart += chunkHours / hoursPerDay;
             }
             
             return chunks;
@@ -537,13 +537,13 @@
                     allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
                     break;
                 } else {
-                    // Move to next available slot (try next day for small chunks)
+                    // Move to next available slot (try next work day for small chunks)
                     if (item.isChunk && item.hours <= weeklyCapacity / 5) {
-                        startDay += 1; // Move to next day for small chunks
+                        startDay += 1; // Move to next work day for small chunks
                     } else {
-                        // Move to next week for larger items
-                        const currentWeek = Math.floor(startDay / 7);
-                        startDay = (currentWeek + 1) * 7;
+                        // Move to next work week for larger items
+                        const currentWeek = Math.floor(startDay / 5); // 5 work days per week
+                        startDay = (currentWeek + 1) * 5; // Start of next work week
                     }
                     attempts++;
                 }
@@ -575,18 +575,18 @@
             }
             
             const endDay = startDay + workDays;
-            const startWeek = Math.floor(startDay / 7);
-            const endWeek = Math.floor(endDay / 7);
+            const startWeek = Math.floor(startDay / 5); // 5 work days per week
+            const endWeek = Math.floor(endDay / 5);
             
-            // Check each week this work spans
+            // Check each work week this work spans
             for (let week = startWeek; week <= endWeek; week++) {
-                const weekStart = Math.max(startDay, week * 7);
-                const weekEnd = Math.min(endDay, (week + 1) * 7);
-                const daysInWeek = weekEnd - weekStart;
+                const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
+                const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
+                const workDaysInWeek = weekEnd - weekStart;
                 
-                if (daysInWeek <= 0) continue; // Skip if no days in this week
+                if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
                 
-                const hoursInWeek = (daysInWeek / workDays) * hours;
+                const hoursInWeek = (workDaysInWeek / workDays) * hours;
                 
                 // Allow some tolerance for floating point precision
                 const tolerance = 0.01;
@@ -606,18 +606,18 @@
             }
             
             const endDay = startDay + workDays;
-            const startWeek = Math.floor(startDay / 7);
-            const endWeek = Math.floor(endDay / 7);
+            const startWeek = Math.floor(startDay / 5); // 5 work days per week
+            const endWeek = Math.floor(endDay / 5);
             
-            // Allocate capacity for each week this work spans
+            // Allocate capacity for each work week this work spans
             for (let week = startWeek; week <= endWeek; week++) {
-                const weekStart = Math.max(startDay, week * 7);
-                const weekEnd = Math.min(endDay, (week + 1) * 7);
-                const daysInWeek = weekEnd - weekStart;
+                const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
+                const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
+                const workDaysInWeek = weekEnd - weekStart;
                 
-                if (daysInWeek <= 0) continue; // Skip if no days in this week
+                if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
                 
-                const hoursInWeek = (daysInWeek / workDays) * hours;
+                const hoursInWeek = (workDaysInWeek / workDays) * hours;
                 
                 weeklyUsage[week] = (weeklyUsage[week] || 0) + hoursInWeek;
             }
@@ -631,30 +631,30 @@
                 return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity };
             }
             
-            // Find the maximum end day to determine number of weeks
+            // Find the maximum end day to determine number of work weeks
             const maxDay = Math.max(...targetSchedule.map(item => item.scheduledEnd + item.waitDays));
-            const maxWeek = Math.ceil(maxDay / 7);
+            const maxWeek = Math.ceil(maxDay / 5); // 5 work days per week
             
             // Initialize weekly hours array
             const weeklyHours = new Array(maxWeek).fill(0);
             
-            // Distribute work hours across weeks based on scheduled times
+            // Distribute work hours across work weeks based on scheduled times
             targetSchedule.forEach(workItem => {
-                const startWeek = Math.floor(workItem.scheduledStart / 7);
-                const endWeek = Math.floor(workItem.scheduledEnd / 7);
+                const startWeek = Math.floor(workItem.scheduledStart / 5); // 5 work days per week
+                const endWeek = Math.floor(workItem.scheduledEnd / 5);
                 
                 if (startWeek === endWeek) {
-                    // Work entirely within one week
+                    // Work entirely within one work week
                     weeklyHours[startWeek] += workItem.hours;
                 } else {
-                    // Work spans multiple weeks - distribute proportionally
-                    const totalDays = workItem.scheduledEnd - workItem.scheduledStart;
+                    // Work spans multiple work weeks - distribute proportionally
+                    const totalWorkDays = workItem.scheduledEnd - workItem.scheduledStart;
                     
                     for (let week = startWeek; week <= endWeek; week++) {
-                        const weekStart = Math.max(workItem.scheduledStart, week * 7);
-                        const weekEnd = Math.min(workItem.scheduledEnd, (week + 1) * 7);
-                        const daysInWeek = weekEnd - weekStart;
-                        const hoursInWeek = (daysInWeek / totalDays) * workItem.hours;
+                        const weekStart = Math.max(workItem.scheduledStart, week * 5); // Start of work week
+                        const weekEnd = Math.min(workItem.scheduledEnd, (week + 1) * 5); // End of work week
+                        const workDaysInWeek = weekEnd - weekStart;
+                        const hoursInWeek = (workDaysInWeek / totalWorkDays) * workItem.hours;
                         
                         weeklyHours[week] += hoursInWeek;
                     }
