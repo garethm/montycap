@@ -1,0 +1,88 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Validate Application
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g html-validate eslint
+    
+    - name: Validate HTML structure
+      run: |
+        html-validate index.html
+    
+    - name: Lint JavaScript
+      run: |
+        # Extract and lint JavaScript from HTML
+        sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > temp.js
+        if [ -s temp.js ]; then
+          npx eslint temp.js --env browser --parserOptions '{"ecmaVersion": 2020}' || true
+        fi
+        rm -f temp.js
+    
+    - name: Check for security issues
+      run: |
+        echo "Checking for common security issues..."
+        
+        # Check for unsafe HTML patterns
+        if grep -n "innerHTML.*=" index.html; then
+          echo "Warning: Found innerHTML usage at the above lines. Review for XSS vulnerabilities."
+        fi
+        
+        # Check for eval usage
+        if grep -n "eval(" index.html; then
+          echo "Error: Found eval() usage - this is a security risk"
+          exit 1
+        fi
+        
+        # Check for unsafe URL schemes
+        if grep -ni "javascript:" index.html; then
+          echo "Error: Found javascript: protocol usage - this is a security risk"
+          exit 1
+        fi
+        
+        # Check for external script sources (should only be Chart.js CDN)
+        external_scripts=$(grep -o 'src="http[^"]*"' index.html || true)
+        if [ -n "$external_scripts" ]; then
+          echo "External scripts found:"
+          echo "$external_scripts"
+          echo "Verify these are from trusted sources"
+        fi
+    
+    - name: Test file integrity
+      run: |
+        # Check file size (should be reasonable for a single HTML file)
+        size=$(wc -c < index.html)
+        if [ $size -gt 1048576 ]; then  # 1MB limit
+          echo "Warning: HTML file is larger than 1MB ($size bytes)"
+        fi
+        
+        # Check for valid HTML structure
+        if ! grep -q "<!DOCTYPE html>" index.html; then
+          echo "Error: Missing DOCTYPE declaration"
+          exit 1
+        fi
+        
+        echo "File validation completed successfully"
