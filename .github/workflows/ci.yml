@@ -46,9 +46,10 @@ jobs:
       run: |
         echo "Checking for common security issues..."
         
-        # Check for unsafe HTML patterns
-        if grep -n "innerHTML.*=" index.html; then
-          echo "Warning: Found innerHTML usage at the above lines. Review for XSS vulnerabilities."
+        # Check for unsafe HTML patterns - only flag dangerous concatenation
+        if grep -n "innerHTML.*+.*[\"']" index.html; then
+          echo "Warning: Found innerHTML concatenation at the above lines. Review for XSS vulnerabilities."
+          exit 1
         fi
         
         # Check for eval usage

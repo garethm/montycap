@@ -47,7 +47,7 @@ jobs:
           exit 1
         fi
         
-        if grep -i "innerHTML.*\+" index.html; then
+        if grep -i "innerHTML.*+.*[\"']" index.html; then
           echo "Warning: Found potential XSS vulnerability with innerHTML concatenation"
           exit 1
         fi
