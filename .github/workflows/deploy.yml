@@ -44,10 +44,17 @@ jobs:
           exit 1
         fi
     
+    - name: Prepare deployment directory
+      run: |
+        mkdir -p dist
+        cp index.html dist/
+        cp LICENSE dist/ 2>/dev/null || true
+        cp README.md dist/ 2>/dev/null || true
+    
     - name: Deploy to gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./
+        publish_dir: ./dist
         publish_branch: gh-pages
         force_orphan: true
