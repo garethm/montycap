@@ -10,6 +10,10 @@ This is a single-file Monte Carlo simulation tool for capacity planning. The ent
 
 Since this is a client-side HTML application, there are no build, test, or lint commands. The application runs directly in the browser by opening `index.html`.
 
+### Development Tools
+- HTML validation: `npx html-validate index.html`
+- Note: Tools installed with npm must be run using `npx` prefix
+
 ### Development Workflow
 - Open `index.html` in a web browser to run the application
 - Make changes directly to the HTML file
