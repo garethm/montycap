@@ -1,8 +1,2 @@
 # Global code owners
 * @garethm
-
-# Security-sensitive files require additional review
-.github/workflows/ @garethm
-.github/dependabot.yml @garethm
-SECURITY.md @garethm
-index.html @garethm
