@@ -35,12 +35,12 @@ jobs:
 
     - name: Validate HTML structure
       run: |
-        html-validate index.html
+        html-validate src/index.html
 
     - name: Lint JavaScript
       run: |
         # Extract and lint JavaScript from HTML
-        sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > temp.js
+        sed -n '/<script>/,/<\/script>/p' src/index.html | sed '1d;$d' > temp.js
         if [ -s temp.js ]; then
           npx eslint temp.js --env browser --parserOptions '{"ecmaVersion": 2020}' || true
         fi
@@ -51,25 +51,25 @@ jobs:
         echo "Checking for common security issues..."
 
         # Check for unsafe HTML patterns - only flag dangerous concatenation
-        if grep -n "innerHTML.*+.*[\"']" index.html; then
+        if grep -n "innerHTML.*+.*[\"']" src/index.html; then
           echo "Warning: Found innerHTML concatenation at the above lines. Review for XSS vulnerabilities."
           exit 1
         fi
 
         # Check for eval usage
-        if grep -n "eval(" index.html; then
+        if grep -n "eval(" src/index.html; then
           echo "Error: Found eval() usage - this is a security risk"
           exit 1
         fi
 
         # Check for unsafe URL schemes
-        if grep -ni "javascript:" index.html; then
+        if grep -ni "javascript:" src/index.html; then
           echo "Error: Found javascript: protocol usage - this is a security risk"
           exit 1
         fi
 
         # Check for external script sources (should only be Chart.js CDN)
-        external_scripts=$(grep -o 'src="http[^"]*"' index.html || true)
+        external_scripts=$(grep -o 'src="http[^"]*"' src/index.html || true)
         if [ -n "$external_scripts" ]; then
           echo "External scripts found:"
           echo "$external_scripts"
@@ -79,13 +79,13 @@ jobs:
     - name: Test file integrity
       run: |
         # Check file size (should be reasonable for a single HTML file)
-        size=$(wc -c < index.html)
+        size=$(wc -c < src/index.html)
         if [ $size -gt 1048576 ]; then  # 1MB limit
           echo "Warning: HTML file is larger than 1MB ($size bytes)"
         fi
 
         # Check for valid HTML structure
-        if ! grep -q "<!DOCTYPE html>" index.html; then
+        if ! grep -q "<!DOCTYPE html>" src/index.html; then
           echo "Error: Missing DOCTYPE declaration"
           exit 1
         fi
