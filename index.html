@@ -362,8 +362,8 @@
         <div id="results" style="display: none;"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" 
-            integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+            integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw=="
             crossorigin="anonymous"></script>
     <script>
         let chart = null; // Keep for backward compatibility
@@ -402,24 +402,24 @@
             if (shape < 1) {
                 return gammaRandom(shape + 1) * Math.pow(Math.random(), 1 / shape);
             }
-            
+
             const d = shape - 1/3;
             const c = 1 / Math.sqrt(9 * d);
-            
+
             while (true) {
                 let x, v;
                 do {
                     x = normalRandom();
                     v = 1 + c * x;
                 } while (v <= 0);
-                
+
                 v = v * v * v;
                 const u = Math.random();
-                
+
                 if (u < 1 - 0.0331 * x * x * x * x) {
                     return d * v;
                 }
-                
+
                 if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
                     return d * v;
                 }
@@ -440,7 +440,7 @@
                     return 0; // Task skipped
                 }
             }
-            
+
             // For required tasks (or when optional task is not skipped), use standard PERT
             return generateTaskEffortHelper(optimistic, expected, pessimistic);
         }
@@ -449,29 +449,29 @@
             // Track all work items that need to be scheduled
             const workItems = [];
             let totalEffort = 0; // Total effort in hours
-            
+
             // Calculate daily capacity limit for chunking
             const dailyCapacity = weeklyCapacity / 5; // Assume 5 work days per week
-            
+
             // Generate all work items for all series
             for (let series = 0; series < programQuantity; series++) {
                 let seriesTime = 0; // Current time in this series
-                
+
                 // Execute tasks sequentially within each series
                 for (let taskIndex = 0; taskIndex < tasks.length; taskIndex++) {
                     const task = tasks[taskIndex];
-                    
+
                     // Check if task is skipped
                     if (task.skipPercentage > 0 && Math.random() < (task.skipPercentage / 100)) {
                         continue; // Skip this task
                     }
-                    
+
                     // Generate work effort in hours
                     const workEffortHours = generateTaskEffortHelper(task.work.optimistic, task.work.expected, task.work.pessimistic);
-                    
+
                     // Generate wait time in days
                     const waitTimeDays = generateTaskEffortHelper(task.wait.optimistic, task.wait.expected, task.wait.pessimistic);
-                    
+
                     // Split large tasks into chunks
                     const taskChunks = chunkTask({
                         series: series,
@@ -481,43 +481,43 @@
                         waitDays: waitTimeDays,
                         earliestStart: seriesTime
                     }, dailyCapacity, hoursPerDay);
-                    
+
                     // Add chunks to work items
                     workItems.push(...taskChunks);
-                    
+
                     // Update series time (for dependency tracking)
                     seriesTime += (workEffortHours / hoursPerDay) + waitTimeDays;
                     totalEffort += workEffortHours;
                 }
             }
-            
+
             // Schedule work items with capacity constraints
             const { scheduledItems, finalTimeline } = scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay);
-            
+
             return {
                 totalEffort: totalEffort, // Total effort in hours
                 totalTime: finalTimeline, // Total timeline in days
                 workSchedule: scheduledItems // When work actually happens
             };
         }
-        
+
         function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
             const chunks = [];
             const maxChunkSize = Math.min(dailyCapacity, taskItem.hours); // Don't exceed daily capacity or total hours
-            
+
             if (taskItem.hours <= maxChunkSize) {
                 // Task fits in one chunk
                 return [taskItem];
             }
-            
+
             // Split task into multiple chunks
             let remainingHours = taskItem.hours;
             let chunkIndex = 0;
             let currentStart = taskItem.earliestStart;
-            
+
             while (remainingHours > 0) {
                 const chunkHours = Math.min(remainingHours, maxChunkSize);
-                
+
                 chunks.push({
                     series: taskItem.series,
                     taskIndex: taskItem.taskIndex,
@@ -530,27 +530,27 @@
                     chunkIndex: chunkIndex,
                     totalChunks: Math.ceil(taskItem.hours / maxChunkSize)
                 });
-                
+
                 remainingHours -= chunkHours;
                 chunkIndex++;
-                
+
                 // Next chunk can start immediately after this one in work days
                 currentStart += chunkHours / hoursPerDay;
             }
-            
+
             return chunks;
         }
-        
+
         function updateProgress(percentage) {
             const progressBar = document.getElementById('progressBar');
             const progressText = document.getElementById('progressText');
-            
+
             if (progressBar && progressText) {
                 progressBar.style.width = percentage + '%';
                 progressText.textContent = Math.round(percentage) + '%';
             }
         }
-        
+
         function scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay) {
             // Sort work items by earliest start time, series priority, and chunk order
             workItems.sort((a, b) => {
@@ -565,66 +565,66 @@
                 }
                 return a.earliestStart - b.earliestStart;
             });
-            
+
             // Track weekly capacity usage
             const weeklyUsage = {}; // week -> hours used
             const scheduledItems = [];
             const seriesProgress = {}; // Track last completion time per series
-            
+
             // Schedule each work item
             for (const item of workItems) {
                 // For chunked tasks, ensure dependency on previous chunk
                 if (item.isChunk && item.chunkIndex > 0) {
                     // Find the previous chunk's completion time
-                    const previousChunks = scheduledItems.filter(si => 
-                        si.series === item.series && 
-                        si.taskIndex === item.taskIndex && 
+                    const previousChunks = scheduledItems.filter(si =>
+                        si.series === item.series &&
+                        si.taskIndex === item.taskIndex &&
                         si.chunkIndex === item.chunkIndex - 1
                     );
-                    
+
                     if (previousChunks.length > 0) {
                         const previousEnd = previousChunks[0].scheduledEnd;
                         item.earliestStart = Math.max(item.earliestStart, previousEnd);
                     }
                 }
-                
+
                 // Ensure series dependencies
                 const seriesKey = item.series;
                 if (seriesProgress[seriesKey]) {
                     item.earliestStart = Math.max(item.earliestStart, seriesProgress[seriesKey]);
                 }
-                
+
                 const scheduledItem = scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay);
                 scheduledItems.push(scheduledItem);
-                
+
                 // Update series progress
                 seriesProgress[seriesKey] = scheduledItem.scheduledEnd + scheduledItem.waitDays;
             }
-            
+
             // Calculate final timeline
             const finalTimeline = Math.max(...scheduledItems.map(item => item.scheduledEnd + item.waitDays));
-            
+
             return {
                 scheduledItems: scheduledItems,
                 finalTimeline: finalTimeline
             };
         }
-        
+
         function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay) {
             let startDay = item.earliestStart;
             const workDays = item.hours / hoursPerDay;
-            
+
             // For chunked tasks, they should fit easily within daily/weekly capacity
             // But we still need basic scheduling logic
-            
+
             // Safety counter to prevent infinite loops
             let attempts = 0;
             const maxAttempts = 52; // Reasonable upper limit
-            
+
             // Find the earliest time where this work can be scheduled
             while (attempts < maxAttempts) {
                 const canSchedule = canScheduleInPeriod(startDay, workDays, item.hours, weeklyUsage, weeklyCapacity);
-                
+
                 if (canSchedule) {
                     // Schedule the work
                     allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
@@ -641,13 +641,13 @@
                     attempts++;
                 }
             }
-            
+
             // If we hit max attempts, force schedule with warning
             if (attempts >= maxAttempts) {
                 console.warn(`Task '${item.task}' could not be scheduled within capacity constraints: requires ${item.hours} hours. Forcing schedule.`);
                 allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
             }
-            
+
             return {
                 series: item.series,
                 taskIndex: item.taskIndex,
@@ -661,72 +661,72 @@
                 originalTask: item.originalTask
             };
         }
-        
+
         function canScheduleInPeriod(startDay, workDays, hours, weeklyUsage, weeklyCapacity) {
             if (workDays <= 0 || hours <= 0) {
                 return true; // Zero work can always be scheduled
             }
-            
+
             const endDay = startDay + workDays;
             const startWeek = Math.floor(startDay / 5); // 5 work days per week
             const endWeek = Math.floor(endDay / 5);
-            
+
             // Check each work week this work spans
             for (let week = startWeek; week <= endWeek; week++) {
                 const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
                 const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
                 const workDaysInWeek = weekEnd - weekStart;
-                
+
                 if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
-                
+
                 const hoursInWeek = (workDaysInWeek / workDays) * hours;
-                
+
                 // Allow some tolerance for floating point precision
                 const tolerance = 0.01;
                 const currentUsage = weeklyUsage[week] || 0;
-                
+
                 if (currentUsage + hoursInWeek > weeklyCapacity + tolerance) {
                     return false;
                 }
             }
-            
+
             return true;
         }
-        
+
         function allocateCapacity(startDay, workDays, hours, weeklyUsage) {
             if (workDays <= 0 || hours <= 0) {
                 return; // Nothing to allocate
             }
-            
+
             const endDay = startDay + workDays;
             const startWeek = Math.floor(startDay / 5); // 5 work days per week
             const endWeek = Math.floor(endDay / 5);
-            
+
             // Allocate capacity for each work week this work spans
             for (let week = startWeek; week <= endWeek; week++) {
                 const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
                 const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
                 const workDaysInWeek = weekEnd - weekStart;
-                
+
                 if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
-                
+
                 const hoursInWeek = (workDaysInWeek / workDays) * hours;
-                
+
                 weeklyUsage[week] = (weeklyUsage[week] || 0) + hoursInWeek;
             }
         }
-        
+
         function findConfidenceRangeSimulations(simulationData, confidenceTimeline, confidence) {
             // Get the confidence index range (e.g., for 80%, look at 78-82% range)
             const confidenceIndex = Math.floor(simulationData.length * confidence / 100);
             const rangeSize = Math.max(Math.floor(simulationData.length * 0.02), 5); // 2% of simulations or minimum 5
-            
+
             const startIndex = Math.max(0, confidenceIndex - Math.floor(rangeSize / 2));
             const endIndex = Math.min(simulationData.length - 1, startIndex + rangeSize - 1);
-            
+
             // Take simulations from the confidence range (already sorted by timeline)
             const rangeSimulations = simulationData.slice(startIndex, endIndex + 1);
-            
+
             console.log('Confidence Range:', {
                 targetIndex: confidenceIndex,
                 rangeStart: startIndex,
@@ -735,27 +735,27 @@
                 timelineRange: `${rangeSimulations[0]?.timeline.toFixed(1)} - ${rangeSimulations[rangeSimulations.length-1]?.timeline.toFixed(1)} days`,
                 effortRange: `${Math.min(...rangeSimulations.map(s => s.effort)).toFixed(1)} - ${Math.max(...rangeSimulations.map(s => s.effort)).toFixed(1)} hours`
             });
-            
+
             return rangeSimulations;
         }
-        
+
         function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
             if (!confidenceSimulations || confidenceSimulations.length === 0) {
                 return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity, simulationCount: 0 };
             }
-            
+
             // Calculate workload for each simulation
-            const allWorkloads = confidenceSimulations.map(sim => 
+            const allWorkloads = confidenceSimulations.map(sim =>
                 calculateSingleWorkloadDistribution(sim.workSchedule)
             );
-            
+
             // Find the maximum number of weeks across all simulations
             const maxWeek = Math.max(...allWorkloads.map(w => w.maxWeek));
-            
+
             // Initialize arrays for aggregation
             const weeklyHoursSums = new Array(maxWeek).fill(0);
             const weeklyHoursCounts = new Array(maxWeek).fill(0);
-            
+
             // Aggregate weekly hours
             allWorkloads.forEach(workload => {
                 workload.weeklyHours.forEach((hours, week) => {
@@ -765,12 +765,12 @@
                     }
                 });
             });
-            
+
             // Calculate mean weekly hours
-            const weeklyHours = weeklyHoursSums.map((sum, week) => 
+            const weeklyHours = weeklyHoursSums.map((sum, week) =>
                 weeklyHoursCounts[week] > 0 ? sum / weeklyHoursCounts[week] : 0
             );
-            
+
             // Debug: Check total workload hours
             const totalWorkloadHours = weeklyHours.reduce((sum, hours) => sum + hours, 0);
             console.log('Workload Total Check:', {
@@ -778,7 +778,7 @@
                 targetEffort: debugInfo.averageEffort,
                 difference: (totalWorkloadHours - parseFloat(debugInfo.averageEffort)).toFixed(1)
             });
-            
+
             return {
                 weeklyHours: weeklyHours,
                 maxWeek: maxWeek,
@@ -788,75 +788,75 @@
                 totalHours: totalWorkloadHours
             };
         }
-        
+
         function calculateSingleWorkloadDistribution(targetSchedule) {
             // Calculate workload for a single simulation
             if (!targetSchedule || targetSchedule.length === 0) {
                 return { weeklyHours: [], maxWeek: 0 };
             }
-            
+
             // Find the maximum end day to determine number of work weeks
             const maxDay = Math.max(...targetSchedule.map(item => item.scheduledEnd + item.waitDays));
             const maxWeek = Math.ceil(maxDay / 5); // 5 work days per week
-            
+
             // Initialize weekly hours array
             const weeklyHours = new Array(maxWeek).fill(0);
-            
+
             // Distribute work hours across work weeks based on scheduled times
             targetSchedule.forEach(workItem => {
                 const startWeek = Math.floor(workItem.scheduledStart / 5); // 5 work days per week
                 const endWeek = Math.floor(workItem.scheduledEnd / 5);
-                
+
                 if (startWeek === endWeek) {
                     // Work entirely within one work week
                     weeklyHours[startWeek] += workItem.hours;
                 } else {
                     // Work spans multiple work weeks - distribute proportionally
                     const totalWorkDays = workItem.scheduledEnd - workItem.scheduledStart;
-                    
+
                     for (let week = startWeek; week <= endWeek; week++) {
                         const weekStart = Math.max(workItem.scheduledStart, week * 5); // Start of work week
                         const weekEnd = Math.min(workItem.scheduledEnd, (week + 1) * 5); // End of work week
                         const workDaysInWeek = weekEnd - weekStart;
                         const hoursInWeek = (workDaysInWeek / totalWorkDays) * workItem.hours;
-                        
+
                         weeklyHours[week] += hoursInWeek;
                     }
                 }
             });
-            
+
             return {
                 weeklyHours: weeklyHours,
                 maxWeek: maxWeek
             };
         }
-        
+
         function generateTaskEffortHelper(optimistic, expected, pessimistic) {
             // Standard PERT/Beta distribution implementation
             const range = pessimistic - optimistic;
             if (range <= 0) return expected;
-            
+
             // PERT uses these formulas for Beta distribution parameters
             const mu = (optimistic + 4 * expected + pessimistic) / 6;
             const sigma = (pessimistic - optimistic) / 6;
             const variance = sigma * sigma;
-            
+
             // Normalize to 0-1 range for Beta distribution
             const muNorm = (mu - optimistic) / range;
             const varianceNorm = variance / (range * range);
-            
+
             // Calculate Beta parameters
             const temp = muNorm * (1 - muNorm) / varianceNorm - 1;
             const alpha = muNorm * temp;
             const beta = (1 - muNorm) * temp;
-            
+
             // Ensure valid parameters
             const safeAlpha = Math.max(0.5, alpha);
             const safeBeta = Math.max(0.5, beta);
-            
+
             // Generate Beta random variable
             const betaValue = betaDistribution(safeAlpha, safeBeta);
-            
+
             // Scale back to original range
             return optimistic + betaValue * range;
         }
@@ -867,11 +867,11 @@
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
             const progressText = document.getElementById('progressText');
-            
+
             runButton.disabled = true;
             runButton.textContent = 'Running...';
             progressContainer.style.display = 'block';
-            
+
             try {
                 await runSimulationAsync();
             } catch (error) {
@@ -884,7 +884,7 @@
                 progressContainer.style.display = 'none';
             }
         }
-        
+
         async function runSimulationAsync() {
             const capacity = parseFloat(document.getElementById('capacity').value);
             const programQuantity = parseInt(document.getElementById('programQuantity').value);
@@ -892,7 +892,7 @@
             const confidence = parseFloat(document.getElementById('confidence').value);
             const hoursPerDay = parseFloat(document.getElementById('hoursPerDay').value);
             const weeklyCapacity = parseFloat(document.getElementById('weeklyCapacity').value);
-            
+
             const tasks = [];
             document.querySelectorAll('.task-input').forEach(taskDiv => {
                 const inputs = taskDiv.querySelectorAll('input');
@@ -904,11 +904,11 @@
                 const waitOptimistic = parseFloat(inputs[5].value) || 0;
                 const waitExpected = parseFloat(inputs[6].value) || 0;
                 const waitPessimistic = parseFloat(inputs[7].value) || 0;
-                
+
                 if (name && workOptimistic && workExpected && workPessimistic) {
-                    tasks.push({ 
-                        name, 
-                        skipPercentage, 
+                    tasks.push({
+                        name,
+                        skipPercentage,
                         work: { optimistic: workOptimistic, expected: workExpected, pessimistic: workPessimistic },
                         wait: { optimistic: waitOptimistic, expected: waitExpected, pessimistic: waitPessimistic }
                     });
@@ -925,15 +925,15 @@
             const capacityResults = [];
             const workSchedules = [];
             const simulationData = []; // Track simulation index with results
-            
+
             // Run simulations in batches to prevent UI blocking
             const batchSize = 100;
             const totalBatches = Math.ceil(simulations / batchSize);
-            
+
             for (let batch = 0; batch < totalBatches; batch++) {
                 const batchStart = batch * batchSize;
                 const batchEnd = Math.min(batchStart + batchSize, simulations);
-                
+
                 // Run batch of simulations
                 for (let i = batchStart; i < batchEnd; i++) {
                     const simulation = simulateProgram(tasks, programQuantity, hoursPerDay, weeklyCapacity);
@@ -941,7 +941,7 @@
                     timelineResults.push(simulation.totalTime); // Days
                     capacityResults.push(capacity - simulation.totalEffort); // Hours
                     workSchedules.push(simulation.workSchedule);
-                    
+
                     // Track which simulation produced which results
                     simulationData.push({
                         index: i,
@@ -950,11 +950,11 @@
                         workSchedule: simulation.workSchedule
                     });
                 }
-                
+
                 // Update progress
                 const progress = ((batch + 1) / totalBatches) * 100;
                 updateProgress(progress);
-                
+
                 // Yield control to prevent UI blocking
                 if (batch < totalBatches - 1) {
                     await new Promise(resolve => setTimeout(resolve, 10));
@@ -963,7 +963,7 @@
 
             // Sort simulation data by timeline to find the confidence case
             simulationData.sort((a, b) => a.timeline - b.timeline);
-            
+
             // Extract sorted results
             effortResults.sort((a, b) => a - b);
             timelineResults.sort((a, b) => a - b);
@@ -971,7 +971,7 @@
 
             const effortMean = effortResults.reduce((sum, val) => sum + val, 0) / effortResults.length;
             const timelineMean = timelineResults.reduce((sum, val) => sum + val, 0) / timelineResults.length;
-            
+
             const effortP10 = effortResults[Math.floor(effortResults.length * 0.1)];
             const effortP50 = effortResults[Math.floor(effortResults.length * 0.5)];
             const effortP90 = effortResults[Math.floor(effortResults.length * 0.9)];
@@ -986,10 +986,10 @@
 
             const overCapacityCount = effortResults.filter(r => r > capacity).length;
             const overCapacityPercent = (overCapacityCount / effortResults.length) * 100;
-            
+
             // Find all simulations within tolerance of the timeline confidence case
             const confidenceSimulations = findConfidenceRangeSimulations(simulationData, timelineConfidenceValue, confidence);
-            
+
             // Debug: Check what we're averaging
             const debugInfo = {
                 targetTimeline: timelineConfidenceValue,
@@ -1001,7 +1001,7 @@
                 averageEffort: (confidenceSimulations.reduce((sum, s) => sum + s.effort, 0) / confidenceSimulations.length).toFixed(1)
             };
             console.log('Workload Debug:', debugInfo);
-            
+
             // Calculate workload distribution as average of similar simulations
             const workloadData = calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo);
 
@@ -1032,21 +1032,21 @@
 
         function displayResults(data) {
             const resultsDiv = document.getElementById('results');
-            
+
             let capacityMessage = '';
             if (data.overCapacityPercent > 20) {
                 capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours. 
+                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
                     Consider reducing scope or increasing capacity.
                 </div>`;
             } else if (data.overCapacityPercent > 5) {
                 capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours. 
+                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
                     Monitor closely and have contingency plans.
                 </div>`;
             } else {
                 capacityMessage = `<div class="capacity-good">
-                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding available hours. 
+                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding available hours.
                     Reasonable buffer for unexpected work.
                 </div>`;
             }
@@ -1054,7 +1054,7 @@
             resultsDiv.innerHTML = `
                 <div class="results">
                     <h3>Simulation Results</h3>
-                    
+
                     <h4>Effort Analysis (person-hours)</h4>
                     <div class="results-grid">
                         <div class="metric">
@@ -1083,7 +1083,7 @@
                         </div>
                     </div>
                     ${capacityMessage}
-                    
+
                     <h4>Timeline Analysis (days)</h4>
                     <div class="results-grid">
                         <div class="metric">
@@ -1103,20 +1103,20 @@
                             <div class="metric-label">P90 (Worst Case)</div>
                         </div>
                     </div>
-                    
+
                     <div class="distribution-chart">
                         <canvas id="effortChart"></canvas>
                     </div>
-                    
+
                     <div class="distribution-chart">
                         <canvas id="timelineChart"></canvas>
                     </div>
-                    
+
                     <h4>Weekly Workload (${data.confidence}% Confidence Case - ${data.workloadData.simulationCount} simulations)</h4>
                     <div class="distribution-chart">
                         <canvas id="workloadChart"></canvas>
                     </div>
-                    
+
                     <div class="executive-summary">
                         <h3>Executive Summary</h3>
                         <div class="summary-grid">
@@ -1135,7 +1135,7 @@
                                     <span class="scenario-value">${data.effort.p90} hours over ${data.timeline.p90} business days</span>
                                 </div>
                             </div>
-                            
+
                             <div class="summary-card">
                                 <h4>Resource Requirements</h4>
                                 <div class="scenario-item">
@@ -1157,7 +1157,7 @@
                     </div>
                 </div>
             `;
-            
+
             resultsDiv.style.display = 'block';
             createCharts(data.effortResults, data.timelineResults, data.capacity, data.workloadData);
         }
@@ -1165,22 +1165,22 @@
         let effortChart = null;
         let timelineChart = null;
         let workloadChart = null;
-        
+
         function createCharts(effortResults, timelineResults, capacity, workloadData) {
             createEffortChart(effortResults, capacity);
             createTimelineChart(timelineResults);
             createWorkloadChart(workloadData);
         }
-        
+
         function createEffortChart(results, capacity) {
             const ctx = document.getElementById('effortChart').getContext('2d');
-            
+
             if (effortChart) {
                 effortChart.destroy();
             }
-            
+
             const histogram = createHistogram(results, 50);
-            
+
             effortChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1222,16 +1222,16 @@
                 }
             });
         }
-        
+
         function createTimelineChart(results) {
             const ctx = document.getElementById('timelineChart').getContext('2d');
-            
+
             if (timelineChart) {
                 timelineChart.destroy();
             }
-            
+
             const histogram = createHistogram(results, 50);
-            
+
             timelineChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1273,48 +1273,48 @@
                 }
             });
         }
-        
+
         function createHistogram(results, bins) {
             const min = Math.min(...results);
             const max = Math.max(...results);
             const binSize = (max - min) / bins;
             const histogram = new Array(bins).fill(0);
-            
+
             results.forEach(value => {
                 const binIndex = Math.min(Math.floor((value - min) / binSize), bins - 1);
                 histogram[binIndex]++;
             });
-            
+
             const labels = [];
             for (let i = 0; i < bins; i++) {
                 labels.push((min + i * binSize).toFixed(1));
             }
-            
+
             return {
                 labels: labels,
                 data: histogram
             };
         }
-        
+
         function createWorkloadChart(workloadData) {
             const ctx = document.getElementById('workloadChart').getContext('2d');
-            
+
             if (workloadChart) {
                 workloadChart.destroy();
             }
-            
+
             if (!workloadData || !workloadData.weeklyHours || workloadData.weeklyHours.length === 0) {
                 return;
             }
-            
+
             const labels = [];
             for (let i = 0; i < workloadData.weeklyHours.length; i++) {
                 labels.push(`Week ${i + 1}`);
             }
-            
+
             // Create capacity limit line data
             const capacityLimits = new Array(workloadData.weeklyHours.length).fill(workloadData.weeklyCapacity);
-            
+
             workloadChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1322,10 +1322,10 @@
                     datasets: [{
                         label: 'Hours Required',
                         data: workloadData.weeklyHours.map(h => h.toFixed(1)),
-                        backgroundColor: workloadData.weeklyHours.map(h => 
+                        backgroundColor: workloadData.weeklyHours.map(h =>
                             h > workloadData.weeklyCapacity ? 'rgba(231, 76, 60, 0.6)' : 'rgba(230, 126, 34, 0.6)'
                         ),
-                        borderColor: workloadData.weeklyHours.map(h => 
+                        borderColor: workloadData.weeklyHours.map(h =>
                             h > workloadData.weeklyCapacity ? 'rgba(231, 76, 60, 1)' : 'rgba(230, 126, 34, 1)'
                         ),
                         borderWidth: 1
@@ -1375,33 +1375,33 @@
         function loadFromFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            
+
             if (!file) {
                 alert('Please select a file first');
                 return;
             }
-            
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = e.target.result;
-                
+
                 if (file.name.endsWith('.csv')) {
                     parseCSV(data);
                 }
             };
-            
+
             if (file.name.endsWith('.csv')) {
                 reader.readAsText(file);
             }
         }
-        
+
         function parseCSV(data) {
             const lines = data.trim().split('\n');
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-            
+
             // Clear existing tasks
             document.getElementById('tasks').innerHTML = '';
-            
+
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
                 if (values.length >= 8) {
@@ -1409,7 +1409,7 @@
                 }
             }
         }
-        
+
         function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess) {
             const tasksDiv = document.getElementById('tasks');
             const taskDiv = document.createElement('div');
@@ -1427,7 +1427,7 @@
             `;
             tasksDiv.appendChild(taskDiv);
         }
-        
+
         function exportToFile() {
             const tasks = [];
             document.querySelectorAll('.task-input').forEach(taskDiv => {
@@ -1440,17 +1440,17 @@
                 const waitOpt = inputs[5].value;
                 const waitExp = inputs[6].value;
                 const waitPess = inputs[7].value;
-                
+
                 if (name) {
                     tasks.push([name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess]);
                 }
             });
-            
+
             let csvContent = 'Task Name,Skip %,Work Optimistic (hrs),Work Expected (hrs),Work Pessimistic (hrs),Wait Optimistic (days),Wait Expected (days),Wait Pessimistic (days)\n';
             tasks.forEach(task => {
                 csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
             });
-            
+
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
