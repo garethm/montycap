@@ -29,22 +29,22 @@ jobs:
         npm install -g html-validate
 
         # Validate the HTML file
-        html-validate src/index.html
+        html-validate web/index.html
 
     - name: Security headers check
       run: |
         # Check for potential security issues in HTML
-        if grep -i "javascript:" src/index.html; then
+        if grep -i "javascript:" web/index.html; then
           echo "Warning: Found javascript: protocol usage"
           exit 1
         fi
 
-        if grep -i "eval(" src/index.html; then
+        if grep -i "eval(" web/index.html; then
           echo "Warning: Found eval() usage"
           exit 1
         fi
 
-        if grep -i "innerHTML.*+.*[\"']" src/index.html; then
+        if grep -i "innerHTML.*+.*[\"']" web/index.html; then
           echo "Warning: Found potential XSS vulnerability with innerHTML concatenation"
           exit 1
         fi
@@ -52,7 +52,7 @@ jobs:
     - name: Prepare deployment directory
       run: |
         mkdir -p dist
-        cp src/index.html dist/
+        cp web/index.html dist/
         cp LICENSE dist/ 2>/dev/null || true
         cp README.md dist/ 2>/dev/null || true
 

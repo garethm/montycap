@@ -15,7 +15,7 @@ A web-based Monte Carlo simulation tool for capacity planning that helps estimat
 
 ## Getting Started
 
-1. Open `src/index.html` in your web browser
+1. Open `web/index.html` in your web browser
 2. Configure your simulation settings:
    - Available capacity (person-days)
    - Number of simulation runs (default: 10,000)
@@ -94,7 +94,7 @@ MIT License - see LICENSE file for details
 
 This is a single-file application. To contribute:
 1. Fork the repository
-2. Make changes to `src/index.html`
+2. Make changes to `web/index.html`
 3. Test in multiple browsers
 4. Submit a pull request
 
