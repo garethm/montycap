@@ -4,24 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a single-file Monte Carlo simulation tool for capacity planning. The entire application is contained in `index.html` as a self-contained web application that runs in the browser.
+This is a single-file Monte Carlo simulation tool for capacity planning. The entire application is contained in `src/index.html` as a self-contained web application that runs in the browser.
 
 ## Commands
 
-Since this is a client-side HTML application, there are no build, test, or lint commands. The application runs directly in the browser by opening `index.html`.
+Since this is a client-side HTML application, there are no build, test, or lint commands. The application runs directly in the browser by opening `src/index.html`.
 
 ### Development Tools
-- HTML validation: `npx html-validate index.html`
+- HTML validation: `npx html-validate src/index.html`
 - Note: Tools installed with npm must be run using `npx` prefix
 
 ### Development Workflow
-- Open `index.html` in a web browser to run the application
+- Open `src/index.html` in a web browser to run the application
 - Make changes directly to the HTML file
 - Refresh the browser to see changes
 - Test across multiple browsers for compatibility
 
 ### Testing
-- Manual testing by opening `index.html` in different browsers
+- Manual testing by opening `src/index.html` in different browsers
 - Test with various task configurations and simulation parameters
 - Verify CSV import/export functionality
 - Test edge cases with extreme values
