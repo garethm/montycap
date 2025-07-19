@@ -90,13 +90,24 @@ Works in modern browsers supporting:
 
 MIT License - see LICENSE file for details
 
+## Documentation
+
+- **[Contributing Guide](docs/development/CONTRIBUTING.md)**: How to contribute to this project
+- **[Security Policy](docs/development/SECURITY.md)**: Security considerations and vulnerability reporting
+- **[Architecture Decisions](docs/adr/)**: Technical decisions and their rationale
+- **[Feature Documentation](docs/features/)**: Detailed feature specifications
+
 ## Contributing
 
 This is a single-file application. To contribute:
+
 1. Fork the repository
-2. Make changes to `web/index.html`
-3. Test in multiple browsers
-4. Submit a pull request
+2. Set up pre-commit hooks (see [Contributing Guide](docs/development/CONTRIBUTING.md))
+3. Make changes to `web/index.html`
+4. Test in multiple browsers
+5. Submit a pull request
+
+For detailed contribution guidelines, see [CONTRIBUTING.md](docs/development/CONTRIBUTING.md).
 
 ## Support
 
