@@ -35,7 +35,7 @@ Each task requires:
 - **Quantity**: Number of times this task will be performed
 - **Skip %**: Probability the task can be skipped (0-95%)
 - **Optimistic**: Best-case effort estimate
-- **Expected**: Most likely effort estimate  
+- **Expected**: Most likely effort estimate
 - **Pessimistic**: Worst-case effort estimate
 
 ### Results Interpretation
@@ -50,7 +50,7 @@ The simulation provides:
 ### Capacity Risk Indicators
 
 - **🟢 Good Capacity**: <5% risk of exceeding capacity
-- **🟡 Moderate Risk**: 5-20% risk of exceeding capacity  
+- **🟡 Moderate Risk**: 5-20% risk of exceeding capacity
 - **🔴 High Risk**: >20% risk of exceeding capacity
 
 ## File Format
