@@ -45,7 +45,7 @@ jobs:
         sarif_file: 'trivy-results.sarif'
 
     - name: Scan for secrets
-      uses: trufflesecurity/trufflehog@907ac64fd42b18dab2ceba2fda39834d3f8ba7e3 # main
+      uses: trufflesecurity/trufflehog@a05cf0859455b5b16317ee22d809887a4043cdf0 # main
       with:
         path: ./
         extra_args: --debug --only-verified
