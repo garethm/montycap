@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Timeline &amp; Capacity Planning</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .task-input {
+            display: grid;
+            grid-template-columns: 2fr 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .task-input input, .task-input select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .task-input input[type="number"] {
+            text-align: center;
+        }
+        .task-header {
+            display: grid;
+            grid-template-columns: 2fr 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f6f3;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .distribution-chart {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .capacity-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .capacity-good {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .setting-item input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .executive-summary {
+            margin-top: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #e67e22;
+        }
+        .executive-summary h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .summary-card h4 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .scenario-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .scenario-item:last-child {
+            border-bottom: none;
+        }
+        .scenario-label {
+            font-weight: 500;
+            color: #7f8c8d;
+        }
+        .scenario-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .risk-low {
+            color: #27ae60 !important;
+        }
+        .risk-medium {
+            color: #f39c12 !important;
+        }
+        .risk-high {
+            color: #e74c3c !important;
+        }
+        .file-controls {
+            margin-bottom: 15px;
+        }
+        .file-input {
+            margin-right: 10px;
+        }
+        .button-container {
+            text-align: center;
+        }
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress-wrapper {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .progress-track {
+            background: #ddd;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #3498db;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monte Carlo Timeline &amp; Capacity Planning</h1>
+        <div class="section">
+            <h3>Simulation Settings</h3>
+            <div class="settings">
+                <div class="setting-item">
+                    <label>Available Capacity (person-hours)</label>
+                    <input type="number" id="capacity" value="800" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>Program Quantity</label>
+                    <input type="number" id="programQuantity" value="3" min="1" title="Number of parallel series to execute">
+                </div>
+                <div class="setting-item">
+                    <label>Simulation Runs</label>
+                    <input type="number" id="simulations" value="1000" min="100">
+                </div>
+                <div class="setting-item">
+                    <label>Confidence Level (%)</label>
+                    <input type="number" id="confidence" value="80" min="50" max="99">
+                </div>
+                <div class="setting-item">
+                    <label>Hours per Work Day</label>
+                    <input type="number" id="hoursPerDay" value="8" min="1" max="24" title="Hours per work day for timeline calculation">
+                </div>
+                <div class="setting-item">
+                    <label>Max Weekly Capacity (hrs)</label>
+                    <input type="number" id="weeklyCapacity" value="40" min="1" title="Maximum hours available per week for this workstream">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Tasks &amp; Initiatives</h3>
+            <div class="file-controls">
+                <input type="file" id="fileInput" accept=".csv" class="file-input">
+                <button type="button" class="btn btn-secondary" onclick="loadFromFile()">Load from File</button>
+                <button type="button" class="btn btn-secondary" onclick="exportToFile()">Export to CSV</button>
+            </div>
+            <div class="task-header">
+                <div>Task Name</div>
+                <div>Skip %</div>
+                <div>Work Opt (hrs)</div>
+                <div>Work Exp (hrs)</div>
+                <div>Work Pess (hrs)</div>
+                <div>Wait Opt</div>
+                <div>Wait Exp</div>
+                <div>Wait Pess</div>
+                <div>Action</div>
+            </div>
+            <div id="tasks">
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Supplier Security Review" value="Supplier Security Review">
+                    <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="32" value="32" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="96" value="96" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="0" value="0" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="2" value="2" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="5" value="5" min="0" step="0.1" title="Wait time pessimistic">
+                    <button type="button" class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Vulnerability Assessment" value="Vulnerability Assessment">
+                    <input type="number" placeholder="0%" value="0" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="24" value="24" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="64" value="64" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="120" value="120" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="1" value="1" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="3" value="3" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="7" value="7" min="0" step="0.1" title="Wait time pessimistic">
+                    <button type="button" class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+                <div class="task-input">
+                    <input type="text" placeholder="e.g., Supplier Follow-up" value="Supplier Follow-up">
+                    <input type="number" placeholder="60%" value="60" min="0" max="95" step="5" title="% chance task can be skipped">
+                    <input type="number" placeholder="8" value="8" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                    <input type="number" placeholder="24" value="24" min="0.1" step="0.1" title="Work effort expected (hours)">
+                    <input type="number" placeholder="64" value="64" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                    <input type="number" placeholder="0" value="0" min="0" step="0.1" title="Wait time optimistic">
+                    <input type="number" placeholder="1" value="1" min="0" step="0.1" title="Wait time expected">
+                    <input type="number" placeholder="3" value="3" min="0" step="0.1" title="Wait time pessimistic">
+                    <button type="button" class="remove-btn" onclick="removeTask(this)">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="addTask()">Add Task</button>
+        </div>
+
+        <div class="button-container">
+            <button type="button" class="btn" id="runButton" onclick="runSimulation()">Run Timeline &amp; Capacity Simulation</button>
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-wrapper">
+                    <div class="progress-header">
+                        <span>Running simulation...</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+            integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw=="
+            crossorigin="anonymous"></script>
+    <script>
+        let chart = null; // Keep for backward compatibility
+
+        function addTask() {
+            const tasksDiv = document.getElementById('tasks');
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-input';
+            taskDiv.innerHTML = `
+                <input type="text" placeholder="Task name">
+                <input type="number" placeholder="Skip %" min="0" max="95" step="5" value="0" title="% chance task can be skipped">
+                <input type="number" placeholder="Work Opt" min="0.1" step="0.1" title="Work effort optimistic (hours)">
+                <input type="number" placeholder="Work Exp" min="0.1" step="0.1" title="Work effort expected (hours)">
+                <input type="number" placeholder="Work Pess" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
+                <input type="number" placeholder="Wait Opt" min="0" step="0.1" value="0" title="Wait time optimistic">
+                <input type="number" placeholder="Wait Exp" min="0" step="0.1" value="0" title="Wait time expected">
+                <input type="number" placeholder="Wait Pess" min="0" step="0.1" value="0" title="Wait time pessimistic">
+                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+            `;
+            tasksDiv.appendChild(taskDiv);
+        }
+
+        function removeTask(button) {
+            button.parentElement.remove();
+        }
+
+        function betaDistribution(alpha, beta) {
+            // Simplified beta distribution using gamma functions
+            const gamma1 = gammaRandom(alpha);
+            const gamma2 = gammaRandom(beta);
+            return gamma1 / (gamma1 + gamma2);
+        }
+
+        function gammaRandom(shape) {
+            // Marsaglia and Tsang method for gamma distribution
+            if (shape < 1) {
+                return gammaRandom(shape + 1) * Math.pow(Math.random(), 1 / shape);
+            }
+
+            const d = shape - 1/3;
+            const c = 1 / Math.sqrt(9 * d);
+
+            while (true) {
+                let x, v;
+                do {
+                    x = normalRandom();
+                    v = 1 + c * x;
+                } while (v <= 0);
+
+                v = v * v * v;
+                const u = Math.random();
+
+                if (u < 1 - 0.0331 * x * x * x * x) {
+                    return d * v;
+                }
+
+                if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
+                    return d * v;
+                }
+            }
+        }
+
+        function normalRandom() {
+            // Box-Muller transform
+            const u = Math.random();
+            const v = Math.random();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+
+        function generateTaskEffort(optimistic, expected, pessimistic, skipPercentage = 0) {
+            // Handle optional tasks with explicit skip percentage
+            if (skipPercentage > 0) {
+                if (Math.random() < (skipPercentage / 100)) {
+                    return 0; // Task skipped
+                }
+            }
+
+            // For required tasks (or when optional task is not skipped), use standard PERT
+            return generateTaskEffortHelper(optimistic, expected, pessimistic);
+        }
+
+        function simulateProgram(tasks, programQuantity, hoursPerDay = 8, weeklyCapacity = 40) {
+            // Track all work items that need to be scheduled
+            const workItems = [];
+            let totalEffort = 0; // Total effort in hours
+
+            // Calculate daily capacity limit for chunking
+            const dailyCapacity = weeklyCapacity / 5; // Assume 5 work days per week
+
+            // Generate all work items for all series
+            for (let series = 0; series < programQuantity; series++) {
+                let seriesTime = 0; // Current time in this series
+
+                // Execute tasks sequentially within each series
+                for (let taskIndex = 0; taskIndex < tasks.length; taskIndex++) {
+                    const task = tasks[taskIndex];
+
+                    // Check if task is skipped
+                    if (task.skipPercentage > 0 && Math.random() < (task.skipPercentage / 100)) {
+                        continue; // Skip this task
+                    }
+
+                    // Generate work effort in hours
+                    const workEffortHours = generateTaskEffortHelper(task.work.optimistic, task.work.expected, task.work.pessimistic);
+
+                    // Generate wait time in days
+                    const waitTimeDays = generateTaskEffortHelper(task.wait.optimistic, task.wait.expected, task.wait.pessimistic);
+
+                    // Split large tasks into chunks
+                    const taskChunks = chunkTask({
+                        series: series,
+                        taskIndex: taskIndex,
+                        task: task.name,
+                        hours: workEffortHours,
+                        waitDays: waitTimeDays,
+                        earliestStart: seriesTime
+                    }, dailyCapacity, hoursPerDay);
+
+                    // Add chunks to work items
+                    workItems.push(...taskChunks);
+
+                    // Update series time (for dependency tracking)
+                    seriesTime += (workEffortHours / hoursPerDay) + waitTimeDays;
+                    totalEffort += workEffortHours;
+                }
+            }
+
+            // Schedule work items with capacity constraints
+            const { scheduledItems, finalTimeline } = scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay);
+
+            return {
+                totalEffort: totalEffort, // Total effort in hours
+                totalTime: finalTimeline, // Total timeline in days
+                workSchedule: scheduledItems // When work actually happens
+            };
+        }
+
+        function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
+            const chunks = [];
+            const maxChunkSize = Math.min(dailyCapacity, taskItem.hours); // Don't exceed daily capacity or total hours
+
+            if (taskItem.hours <= maxChunkSize) {
+                // Task fits in one chunk
+                return [taskItem];
+            }
+
+            // Split task into multiple chunks
+            let remainingHours = taskItem.hours;
+            let chunkIndex = 0;
+            let currentStart = taskItem.earliestStart;
+
+            while (remainingHours > 0) {
+                const chunkHours = Math.min(remainingHours, maxChunkSize);
+
+                chunks.push({
+                    series: taskItem.series,
+                    taskIndex: taskItem.taskIndex,
+                    task: `${taskItem.task} (${chunkIndex + 1}/${Math.ceil(taskItem.hours / maxChunkSize)})`,
+                    hours: chunkHours,
+                    waitDays: chunkIndex === Math.ceil(taskItem.hours / maxChunkSize) - 1 ? taskItem.waitDays : 0, // Only last chunk has wait time
+                    earliestStart: currentStart,
+                    isChunk: true,
+                    originalTask: taskItem.task,
+                    chunkIndex: chunkIndex,
+                    totalChunks: Math.ceil(taskItem.hours / maxChunkSize)
+                });
+
+                remainingHours -= chunkHours;
+                chunkIndex++;
+
+                // Next chunk can start immediately after this one in work days
+                currentStart += chunkHours / hoursPerDay;
+            }
+
+            return chunks;
+        }
+
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            if (progressBar && progressText) {
+                progressBar.style.width = percentage + '%';
+                progressText.textContent = Math.round(percentage) + '%';
+            }
+        }
+
+        function scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay) {
+            // Sort work items by earliest start time, series priority, and chunk order
+            workItems.sort((a, b) => {
+                if (a.series !== b.series) {
+                    return a.series - b.series;
+                }
+                if (a.taskIndex !== b.taskIndex) {
+                    return a.taskIndex - b.taskIndex;
+                }
+                if (a.chunkIndex !== undefined && b.chunkIndex !== undefined) {
+                    return a.chunkIndex - b.chunkIndex;
+                }
+                return a.earliestStart - b.earliestStart;
+            });
+
+            // Track weekly capacity usage
+            const weeklyUsage = {}; // week -> hours used
+            const scheduledItems = [];
+            const seriesProgress = {}; // Track last completion time per series
+
+            // Schedule each work item
+            for (const item of workItems) {
+                // For chunked tasks, ensure dependency on previous chunk
+                if (item.isChunk && item.chunkIndex > 0) {
+                    // Find the previous chunk's completion time
+                    const previousChunks = scheduledItems.filter(si =>
+                        si.series === item.series &&
+                        si.taskIndex === item.taskIndex &&
+                        si.chunkIndex === item.chunkIndex - 1
+                    );
+
+                    if (previousChunks.length > 0) {
+                        const previousEnd = previousChunks[0].scheduledEnd;
+                        item.earliestStart = Math.max(item.earliestStart, previousEnd);
+                    }
+                }
+
+                // Ensure series dependencies
+                const seriesKey = item.series;
+                if (seriesProgress[seriesKey]) {
+                    item.earliestStart = Math.max(item.earliestStart, seriesProgress[seriesKey]);
+                }
+
+                const scheduledItem = scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay);
+                scheduledItems.push(scheduledItem);
+
+                // Update series progress
+                seriesProgress[seriesKey] = scheduledItem.scheduledEnd + scheduledItem.waitDays;
+            }
+
+            // Calculate final timeline
+            const finalTimeline = Math.max(...scheduledItems.map(item => item.scheduledEnd + item.waitDays));
+
+            return {
+                scheduledItems: scheduledItems,
+                finalTimeline: finalTimeline
+            };
+        }
+
+        function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay) {
+            let startDay = item.earliestStart;
+            const workDays = item.hours / hoursPerDay;
+
+            // For chunked tasks, they should fit easily within daily/weekly capacity
+            // But we still need basic scheduling logic
+
+            // Safety counter to prevent infinite loops
+            let attempts = 0;
+            const maxAttempts = 52; // Reasonable upper limit
+
+            // Find the earliest time where this work can be scheduled
+            while (attempts < maxAttempts) {
+                const canSchedule = canScheduleInPeriod(startDay, workDays, item.hours, weeklyUsage, weeklyCapacity);
+
+                if (canSchedule) {
+                    // Schedule the work
+                    allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
+                    break;
+                } else {
+                    // Move to next available slot (try next work day for small chunks)
+                    if (item.isChunk && item.hours <= weeklyCapacity / 5) {
+                        startDay += 1; // Move to next work day for small chunks
+                    } else {
+                        // Move to next work week for larger items
+                        const currentWeek = Math.floor(startDay / 5); // 5 work days per week
+                        startDay = (currentWeek + 1) * 5; // Start of next work week
+                    }
+                    attempts++;
+                }
+            }
+
+            // If we hit max attempts, force schedule with warning
+            if (attempts >= maxAttempts) {
+                console.warn(`Task '${item.task}' could not be scheduled within capacity constraints: requires ${item.hours} hours. Forcing schedule.`);
+                allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
+            }
+
+            return {
+                series: item.series,
+                taskIndex: item.taskIndex,
+                task: item.task,
+                scheduledStart: startDay,
+                scheduledEnd: startDay + workDays,
+                hours: item.hours,
+                waitDays: item.waitDays,
+                isChunk: item.isChunk,
+                chunkIndex: item.chunkIndex,
+                originalTask: item.originalTask
+            };
+        }
+
+        function canScheduleInPeriod(startDay, workDays, hours, weeklyUsage, weeklyCapacity) {
+            if (workDays <= 0 || hours <= 0) {
+                return true; // Zero work can always be scheduled
+            }
+
+            const endDay = startDay + workDays;
+            const startWeek = Math.floor(startDay / 5); // 5 work days per week
+            const endWeek = Math.floor(endDay / 5);
+
+            // Check each work week this work spans
+            for (let week = startWeek; week <= endWeek; week++) {
+                const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
+                const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
+                const workDaysInWeek = weekEnd - weekStart;
+
+                if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
+
+                const hoursInWeek = (workDaysInWeek / workDays) * hours;
+
+                // Allow some tolerance for floating point precision
+                const tolerance = 0.01;
+                const currentUsage = weeklyUsage[week] || 0;
+
+                if (currentUsage + hoursInWeek > weeklyCapacity + tolerance) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function allocateCapacity(startDay, workDays, hours, weeklyUsage) {
+            if (workDays <= 0 || hours <= 0) {
+                return; // Nothing to allocate
+            }
+
+            const endDay = startDay + workDays;
+            const startWeek = Math.floor(startDay / 5); // 5 work days per week
+            const endWeek = Math.floor(endDay / 5);
+
+            // Allocate capacity for each work week this work spans
+            for (let week = startWeek; week <= endWeek; week++) {
+                const weekStart = Math.max(startDay, week * 5); // Week starts at day 0, 5, 10, etc.
+                const weekEnd = Math.min(endDay, (week + 1) * 5); // Week ends at day 5, 10, 15, etc.
+                const workDaysInWeek = weekEnd - weekStart;
+
+                if (workDaysInWeek <= 0) continue; // Skip if no work days in this week
+
+                const hoursInWeek = (workDaysInWeek / workDays) * hours;
+
+                weeklyUsage[week] = (weeklyUsage[week] || 0) + hoursInWeek;
+            }
+        }
+
+        function findConfidenceRangeSimulations(simulationData, confidenceTimeline, confidence) {
+            // Get the confidence index range (e.g., for 80%, look at 78-82% range)
+            const confidenceIndex = Math.floor(simulationData.length * confidence / 100);
+            const rangeSize = Math.max(Math.floor(simulationData.length * 0.02), 5); // 2% of simulations or minimum 5
+
+            const startIndex = Math.max(0, confidenceIndex - Math.floor(rangeSize / 2));
+            const endIndex = Math.min(simulationData.length - 1, startIndex + rangeSize - 1);
+
+            // Take simulations from the confidence range (already sorted by timeline)
+            const rangeSimulations = simulationData.slice(startIndex, endIndex + 1);
+
+            console.log('Confidence Range:', {
+                targetIndex: confidenceIndex,
+                rangeStart: startIndex,
+                rangeEnd: endIndex,
+                simulationsUsed: rangeSimulations.length,
+                timelineRange: `${rangeSimulations[0]?.timeline.toFixed(1)} - ${rangeSimulations[rangeSimulations.length-1]?.timeline.toFixed(1)} days`,
+                effortRange: `${Math.min(...rangeSimulations.map(s => s.effort)).toFixed(1)} - ${Math.max(...rangeSimulations.map(s => s.effort)).toFixed(1)} hours`
+            });
+
+            return rangeSimulations;
+        }
+
+        function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
+            if (!confidenceSimulations || confidenceSimulations.length === 0) {
+                return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity, simulationCount: 0 };
+            }
+
+            // Calculate workload for each simulation
+            const allWorkloads = confidenceSimulations.map(sim =>
+                calculateSingleWorkloadDistribution(sim.workSchedule)
+            );
+
+            // Find the maximum number of weeks across all simulations
+            const maxWeek = Math.max(...allWorkloads.map(w => w.maxWeek));
+
+            // Initialize arrays for aggregation
+            const weeklyHoursSums = new Array(maxWeek).fill(0);
+            const weeklyHoursCounts = new Array(maxWeek).fill(0);
+
+            // Aggregate weekly hours
+            allWorkloads.forEach(workload => {
+                workload.weeklyHours.forEach((hours, week) => {
+                    if (week < maxWeek) {
+                        weeklyHoursSums[week] += hours;
+                        weeklyHoursCounts[week] += 1;
+                    }
+                });
+            });
+
+            // Calculate mean weekly hours
+            const weeklyHours = weeklyHoursSums.map((sum, week) =>
+                weeklyHoursCounts[week] > 0 ? sum / weeklyHoursCounts[week] : 0
+            );
+
+            // Debug: Check total workload hours
+            const totalWorkloadHours = weeklyHours.reduce((sum, hours) => sum + hours, 0);
+            console.log('Workload Total Check:', {
+                weeklyHoursSum: totalWorkloadHours.toFixed(1),
+                targetEffort: debugInfo.averageEffort,
+                difference: (totalWorkloadHours - parseFloat(debugInfo.averageEffort)).toFixed(1)
+            });
+
+            return {
+                weeklyHours: weeklyHours,
+                maxWeek: maxWeek,
+                confidence: confidence,
+                weeklyCapacity: weeklyCapacity,
+                simulationCount: confidenceSimulations.length,
+                totalHours: totalWorkloadHours
+            };
+        }
+
+        function calculateSingleWorkloadDistribution(targetSchedule) {
+            // Calculate workload for a single simulation
+            if (!targetSchedule || targetSchedule.length === 0) {
+                return { weeklyHours: [], maxWeek: 0 };
+            }
+
+            // Find the maximum end day to determine number of work weeks
+            const maxDay = Math.max(...targetSchedule.map(item => item.scheduledEnd + item.waitDays));
+            const maxWeek = Math.ceil(maxDay / 5); // 5 work days per week
+
+            // Initialize weekly hours array
+            const weeklyHours = new Array(maxWeek).fill(0);
+
+            // Distribute work hours across work weeks based on scheduled times
+            targetSchedule.forEach(workItem => {
+                const startWeek = Math.floor(workItem.scheduledStart / 5); // 5 work days per week
+                const endWeek = Math.floor(workItem.scheduledEnd / 5);
+
+                if (startWeek === endWeek) {
+                    // Work entirely within one work week
+                    weeklyHours[startWeek] += workItem.hours;
+                } else {
+                    // Work spans multiple work weeks - distribute proportionally
+                    const totalWorkDays = workItem.scheduledEnd - workItem.scheduledStart;
+
+                    for (let week = startWeek; week <= endWeek; week++) {
+                        const weekStart = Math.max(workItem.scheduledStart, week * 5); // Start of work week
+                        const weekEnd = Math.min(workItem.scheduledEnd, (week + 1) * 5); // End of work week
+                        const workDaysInWeek = weekEnd - weekStart;
+                        const hoursInWeek = (workDaysInWeek / totalWorkDays) * workItem.hours;
+
+                        weeklyHours[week] += hoursInWeek;
+                    }
+                }
+            });
+
+            return {
+                weeklyHours: weeklyHours,
+                maxWeek: maxWeek
+            };
+        }
+
+        function generateTaskEffortHelper(optimistic, expected, pessimistic) {
+            // Standard PERT/Beta distribution implementation
+            const range = pessimistic - optimistic;
+            if (range <= 0) return expected;
+
+            // PERT uses these formulas for Beta distribution parameters
+            const mu = (optimistic + 4 * expected + pessimistic) / 6;
+            const sigma = (pessimistic - optimistic) / 6;
+            const variance = sigma * sigma;
+
+            // Normalize to 0-1 range for Beta distribution
+            const muNorm = (mu - optimistic) / range;
+            const varianceNorm = variance / (range * range);
+
+            // Calculate Beta parameters
+            const temp = muNorm * (1 - muNorm) / varianceNorm - 1;
+            const alpha = muNorm * temp;
+            const beta = (1 - muNorm) * temp;
+
+            // Ensure valid parameters
+            const safeAlpha = Math.max(0.5, alpha);
+            const safeBeta = Math.max(0.5, beta);
+
+            // Generate Beta random variable
+            const betaValue = betaDistribution(safeAlpha, safeBeta);
+
+            // Scale back to original range
+            return optimistic + betaValue * range;
+        }
+
+        async function runSimulation() {
+            // Update UI state
+            const runButton = document.getElementById('runButton');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            runButton.disabled = true;
+            runButton.textContent = 'Running...';
+            progressContainer.style.display = 'block';
+
+            try {
+                await runSimulationAsync();
+            } catch (error) {
+                console.error('Simulation error:', error);
+                alert('Simulation encountered an error. Please try again.');
+            } finally {
+                // Reset UI state
+                runButton.disabled = false;
+                runButton.textContent = 'Run Timeline & Capacity Simulation';
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        async function runSimulationAsync() {
+            const capacity = parseFloat(document.getElementById('capacity').value);
+            const programQuantity = parseInt(document.getElementById('programQuantity').value);
+            const simulations = parseInt(document.getElementById('simulations').value);
+            const confidence = parseFloat(document.getElementById('confidence').value);
+            const hoursPerDay = parseFloat(document.getElementById('hoursPerDay').value);
+            const weeklyCapacity = parseFloat(document.getElementById('weeklyCapacity').value);
+
+            const tasks = [];
+            document.querySelectorAll('.task-input').forEach(taskDiv => {
+                const inputs = taskDiv.querySelectorAll('input');
+                const name = inputs[0].value;
+                const skipPercentage = parseFloat(inputs[1].value) || 0;
+                const workOptimistic = parseFloat(inputs[2].value);
+                const workExpected = parseFloat(inputs[3].value);
+                const workPessimistic = parseFloat(inputs[4].value);
+                const waitOptimistic = parseFloat(inputs[5].value) || 0;
+                const waitExpected = parseFloat(inputs[6].value) || 0;
+                const waitPessimistic = parseFloat(inputs[7].value) || 0;
+
+                if (name && workOptimistic && workExpected && workPessimistic) {
+                    tasks.push({
+                        name,
+                        skipPercentage,
+                        work: { optimistic: workOptimistic, expected: workExpected, pessimistic: workPessimistic },
+                        wait: { optimistic: waitOptimistic, expected: waitExpected, pessimistic: waitPessimistic }
+                    });
+                }
+            });
+
+            if (tasks.length === 0) {
+                alert('Please add at least one task');
+                return;
+            }
+
+            const effortResults = [];
+            const timelineResults = [];
+            const capacityResults = [];
+            const workSchedules = [];
+            const simulationData = []; // Track simulation index with results
+
+            // Run simulations in batches to prevent UI blocking
+            const batchSize = 100;
+            const totalBatches = Math.ceil(simulations / batchSize);
+
+            for (let batch = 0; batch < totalBatches; batch++) {
+                const batchStart = batch * batchSize;
+                const batchEnd = Math.min(batchStart + batchSize, simulations);
+
+                // Run batch of simulations
+                for (let i = batchStart; i < batchEnd; i++) {
+                    const simulation = simulateProgram(tasks, programQuantity, hoursPerDay, weeklyCapacity);
+                    effortResults.push(simulation.totalEffort); // Hours
+                    timelineResults.push(simulation.totalTime); // Days
+                    capacityResults.push(capacity - simulation.totalEffort); // Hours
+                    workSchedules.push(simulation.workSchedule);
+
+                    // Track which simulation produced which results
+                    simulationData.push({
+                        index: i,
+                        effort: simulation.totalEffort,
+                        timeline: simulation.totalTime,
+                        workSchedule: simulation.workSchedule
+                    });
+                }
+
+                // Update progress
+                const progress = ((batch + 1) / totalBatches) * 100;
+                updateProgress(progress);
+
+                // Yield control to prevent UI blocking
+                if (batch < totalBatches - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+            }
+
+            // Sort simulation data by timeline to find the confidence case
+            simulationData.sort((a, b) => a.timeline - b.timeline);
+
+            // Extract sorted results
+            effortResults.sort((a, b) => a - b);
+            timelineResults.sort((a, b) => a - b);
+            capacityResults.sort((a, b) => a - b);
+
+            const effortMean = effortResults.reduce((sum, val) => sum + val, 0) / effortResults.length;
+            const timelineMean = timelineResults.reduce((sum, val) => sum + val, 0) / timelineResults.length;
+
+            const effortP10 = effortResults[Math.floor(effortResults.length * 0.1)];
+            const effortP50 = effortResults[Math.floor(effortResults.length * 0.5)];
+            const effortP90 = effortResults[Math.floor(effortResults.length * 0.9)];
+            const effortConfidenceIndex = Math.floor(effortResults.length * confidence / 100);
+            const effortConfidenceValue = effortResults[effortConfidenceIndex];
+
+            const timelineP10 = timelineResults[Math.floor(timelineResults.length * 0.1)];
+            const timelineP50 = timelineResults[Math.floor(timelineResults.length * 0.5)];
+            const timelineP90 = timelineResults[Math.floor(timelineResults.length * 0.9)];
+            const timelineConfidenceIndex = Math.floor(timelineResults.length * confidence / 100);
+            const timelineConfidenceValue = timelineResults[timelineConfidenceIndex];
+
+            const overCapacityCount = effortResults.filter(r => r > capacity).length;
+            const overCapacityPercent = (overCapacityCount / effortResults.length) * 100;
+
+            // Find all simulations within tolerance of the timeline confidence case
+            const confidenceSimulations = findConfidenceRangeSimulations(simulationData, timelineConfidenceValue, confidence);
+
+            // Debug: Check what we're averaging
+            const debugInfo = {
+                targetTimeline: timelineConfidenceValue,
+                targetEffort: effortConfidenceValue,
+                actualSimulations: confidenceSimulations.map(s => ({
+                    effort: s.effort.toFixed(1),
+                    timeline: s.timeline.toFixed(1)
+                })),
+                averageEffort: (confidenceSimulations.reduce((sum, s) => sum + s.effort, 0) / confidenceSimulations.length).toFixed(1)
+            };
+            console.log('Workload Debug:', debugInfo);
+
+            // Calculate workload distribution as average of similar simulations
+            const workloadData = calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo);
+
+            displayResults({
+                effort: {
+                    mean: effortMean.toFixed(1),
+                    p10: effortP10.toFixed(1),
+                    p50: effortP50.toFixed(1),
+                    p90: effortP90.toFixed(1),
+                    confidenceValue: effortConfidenceValue.toFixed(1)
+                },
+                timeline: {
+                    mean: timelineMean.toFixed(1),
+                    p10: timelineP10.toFixed(1),
+                    p50: timelineP50.toFixed(1),
+                    p90: timelineP90.toFixed(1),
+                    confidenceValue: timelineConfidenceValue.toFixed(1)
+                },
+                confidence: confidence,
+                capacity: capacity,
+                overCapacityPercent: overCapacityPercent.toFixed(1),
+                effortResults: effortResults,
+                timelineResults: timelineResults,
+                capacityResults: capacityResults,
+                workloadData: workloadData
+            });
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+
+            let capacityMessage = '';
+            if (data.overCapacityPercent > 20) {
+                capacityMessage = `<div class="capacity-warning">
+                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
+                    Consider reducing scope or increasing capacity.
+                </div>`;
+            } else if (data.overCapacityPercent > 5) {
+                capacityMessage = `<div class="capacity-warning">
+                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
+                    Monitor closely and have contingency plans.
+                </div>`;
+            } else {
+                capacityMessage = `<div class="capacity-good">
+                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding available hours.
+                    Reasonable buffer for unexpected work.
+                </div>`;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="results">
+                    <h3>Simulation Results</h3>
+
+                    <h4>Effort Analysis (person-hours)</h4>
+                    <div class="results-grid">
+                        <div class="metric">
+                            <div class="metric-value">${data.effort.mean}</div>
+                            <div class="metric-label">Mean Effort (hrs)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.effort.p50}</div>
+                            <div class="metric-label">Median (P50) hrs</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.effort.confidenceValue}</div>
+                            <div class="metric-label">${data.confidence}% Confidence (hrs)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.effort.p90}</div>
+                            <div class="metric-label">P90 (Worst Case) hrs</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.capacity}</div>
+                            <div class="metric-label">Available Capacity (hrs)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.overCapacityPercent}%</div>
+                            <div class="metric-label">Over Capacity Risk</div>
+                        </div>
+                    </div>
+                    ${capacityMessage}
+
+                    <h4>Timeline Analysis (days)</h4>
+                    <div class="results-grid">
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.mean}</div>
+                            <div class="metric-label">Mean Timeline</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.p50}</div>
+                            <div class="metric-label">Median (P50)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.confidenceValue}</div>
+                            <div class="metric-label">${data.confidence}% Confidence</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.timeline.p90}</div>
+                            <div class="metric-label">P90 (Worst Case)</div>
+                        </div>
+                    </div>
+
+                    <div class="distribution-chart">
+                        <canvas id="effortChart"></canvas>
+                    </div>
+
+                    <div class="distribution-chart">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+
+                    <h4>Weekly Workload (${data.confidence}% Confidence Case - ${data.workloadData.simulationCount} simulations)</h4>
+                    <div class="distribution-chart">
+                        <canvas id="workloadChart"></canvas>
+                    </div>
+
+                    <div class="executive-summary">
+                        <h3>Executive Summary</h3>
+                        <div class="summary-grid">
+                            <div class="summary-card">
+                                <h4>Planning Scenarios</h4>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Most Likely Outcome:</span>
+                                    <span class="scenario-value">${data.effort.p50} hours over ${data.timeline.p50} business days</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Conservative Planning:</span>
+                                    <span class="scenario-value">${data.effort.confidenceValue} hours over ${data.timeline.confidenceValue} business days</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Contingency Planning:</span>
+                                    <span class="scenario-value">${data.effort.p90} hours over ${data.timeline.p90} business days</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-card">
+                                <h4>Resource Requirements</h4>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Expected Weekly Capacity:</span>
+                                    <span class="scenario-value">${(data.workloadData.totalHours / data.workloadData.maxWeek).toFixed(1)} hours/week</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Peak Weekly Demand:</span>
+                                    <span class="scenario-value">${Math.max(...data.workloadData.weeklyHours).toFixed(1)} hours</span>
+                                </div>
+                                <div class="scenario-item">
+                                    <span class="scenario-label">Capacity Risk Level:</span>
+                                    <span class="scenario-value risk-${data.overCapacityPercent > 20 ? 'high' : data.overCapacityPercent > 5 ? 'medium' : 'low'}">
+                                        ${data.overCapacityPercent > 20 ? 'High' : data.overCapacityPercent > 5 ? 'Moderate' : 'Low'} (${data.overCapacityPercent}% chance of exceeding capacity)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.style.display = 'block';
+            createCharts(data.effortResults, data.timelineResults, data.capacity, data.workloadData);
+        }
+
+        let effortChart = null;
+        let timelineChart = null;
+        let workloadChart = null;
+
+        function createCharts(effortResults, timelineResults, capacity, workloadData) {
+            createEffortChart(effortResults, capacity);
+            createTimelineChart(timelineResults);
+            createWorkloadChart(workloadData);
+        }
+
+        function createEffortChart(results, capacity) {
+            const ctx = document.getElementById('effortChart').getContext('2d');
+
+            if (effortChart) {
+                effortChart.destroy();
+            }
+
+            const histogram = createHistogram(results, 50);
+
+            effortChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: histogram.labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histogram.data,
+                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Effort Distribution (person-hours)'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Total Effort (person-hours)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTimelineChart(results) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+
+            const histogram = createHistogram(results, 50);
+
+            timelineChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: histogram.labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: histogram.data,
+                        backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Total Timeline Distribution'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Total Timeline (days)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHistogram(results, bins) {
+            const min = Math.min(...results);
+            const max = Math.max(...results);
+            const binSize = (max - min) / bins;
+            const histogram = new Array(bins).fill(0);
+
+            results.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binSize), bins - 1);
+                histogram[binIndex]++;
+            });
+
+            const labels = [];
+            for (let i = 0; i < bins; i++) {
+                labels.push((min + i * binSize).toFixed(1));
+            }
+
+            return {
+                labels: labels,
+                data: histogram
+            };
+        }
+
+        function createWorkloadChart(workloadData) {
+            const ctx = document.getElementById('workloadChart').getContext('2d');
+
+            if (workloadChart) {
+                workloadChart.destroy();
+            }
+
+            if (!workloadData || !workloadData.weeklyHours || workloadData.weeklyHours.length === 0) {
+                return;
+            }
+
+            const labels = [];
+            for (let i = 0; i < workloadData.weeklyHours.length; i++) {
+                labels.push(`Week ${i + 1}`);
+            }
+
+            // Create capacity limit line data
+            const capacityLimits = new Array(workloadData.weeklyHours.length).fill(workloadData.weeklyCapacity);
+
+            workloadChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hours Required',
+                        data: workloadData.weeklyHours.map(h => h.toFixed(1)),
+                        backgroundColor: workloadData.weeklyHours.map(h =>
+                            h > workloadData.weeklyCapacity ? 'rgba(231, 76, 60, 0.6)' : 'rgba(230, 126, 34, 0.6)'
+                        ),
+                        borderColor: workloadData.weeklyHours.map(h =>
+                            h > workloadData.weeklyCapacity ? 'rgba(231, 76, 60, 1)' : 'rgba(230, 126, 34, 1)'
+                        ),
+                        borderWidth: 1
+                    }, {
+                        label: 'Weekly Capacity Limit',
+                        data: capacityLimits,
+                        type: 'line',
+                        borderColor: 'rgba(192, 57, 43, 1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Weekly Capacity Requirements (${workloadData.confidence}% Confidence - ${workloadData.simulationCount} simulations)`
+                        },
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Week'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Hours Required'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadFromFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+
+                if (file.name.endsWith('.csv')) {
+                    parseCSV(data);
+                }
+            };
+
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            }
+        }
+
+        function parseCSV(data) {
+            const lines = data.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+
+            // Clear existing tasks
+            document.getElementById('tasks').innerHTML = '';
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                if (values.length >= 8) {
+                    addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
+                }
+            }
+        }
+
+        function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess) {
+            const tasksDiv = document.getElementById('tasks');
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-input';
+            taskDiv.innerHTML = `
+                <input type="text" value="${name}">
+                <input type="number" value="${skipPercentage}" min="0" max="95" step="5">
+                <input type="number" value="${workOpt}" min="0.1" step="0.1">
+                <input type="number" value="${workExp}" min="0.1" step="0.1">
+                <input type="number" value="${workPess}" min="0.1" step="0.1">
+                <input type="number" value="${waitOpt}" min="0" step="0.1">
+                <input type="number" value="${waitExp}" min="0" step="0.1">
+                <input type="number" value="${waitPess}" min="0" step="0.1">
+                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
+            `;
+            tasksDiv.appendChild(taskDiv);
+        }
+
+        function exportToFile() {
+            const tasks = [];
+            document.querySelectorAll('.task-input').forEach(taskDiv => {
+                const inputs = taskDiv.querySelectorAll('input');
+                const name = inputs[0].value;
+                const skipPercentage = inputs[1].value;
+                const workOpt = inputs[2].value;
+                const workExp = inputs[3].value;
+                const workPess = inputs[4].value;
+                const waitOpt = inputs[5].value;
+                const waitExp = inputs[6].value;
+                const waitPess = inputs[7].value;
+
+                if (name) {
+                    tasks.push([name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess]);
+                }
+            });
+
+            let csvContent = 'Task Name,Skip %,Work Optimistic (hrs),Work Expected (hrs),Work Pessimistic (hrs),Wait Optimistic (days),Wait Expected (days),Wait Pessimistic (days)\n';
+            tasks.forEach(task => {
+                csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'timeline_planning_tasks.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize with default simulation
+        window.addEventListener('load', function() {
+            setTimeout(runSimulation, 500);
+        });
+    </script>
+</body>
+</html>
