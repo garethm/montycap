@@ -4,20 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a single-file Monte Carlo simulation tool for capacity planning. The entire application is contained in `web/index.html` as a self-contained web application that runs in the browser.
+This is a single-file Monte Carlo simulation tool for capacity planning. The application runs in the browser as a self-contained `web/index.html`, assembled from source files in `src/` via a build step.
 
 ## Commands
 
-Since this is a client-side HTML application, there are no build, test, or lint commands. The application runs directly in the browser by opening `web/index.html`.
+### Build
+```
+npm run build
+```
+Assembles `src/template.html`, `src/simulation.js`, and `src/ui.js` into `web/index.html`.
+
+`web/index.html` is gitignored — always run the build before opening the app in a browser.
 
 ### Development Tools
+- JavaScript lint: `npx eslint src/simulation.js src/ui.js`
 - HTML validation: `npx html-validate web/index.html`
 - Note: Tools installed with npm must be run using `npx` prefix
 
 ### Development Workflow
-- Open `web/index.html` in a web browser to run the application
-- Make changes directly to the HTML file
-- Refresh the browser to see changes
+1. Edit files in `src/`
+2. Run `npm run build`
+3. Open `web/index.html` in a web browser to test
 - Test across multiple browsers for compatibility
 
 ### Testing
@@ -28,25 +35,31 @@ Since this is a client-side HTML application, there are no build, test, or lint 
 
 ## Architecture
 
-### Single-File Architecture
-The application uses a monolithic single-file structure with:
-- **HTML**: Structure and UI components (lines 1-165)
-- **CSS**: Embedded styles for responsive design (lines 7-164)
-- **JavaScript**: Application logic and simulation engine (lines 244-652)
+### Source Structure
+- **`src/simulation.js`**: Pure simulation functions — no DOM dependencies. Safe to test in Node.js.
+- **`src/ui.js`**: DOM-coupled UI functions — reads form inputs, renders results, manages charts.
+- **`src/template.html`**: HTML structure and CSS with a `/* @@BUILD_JS@@ */` placeholder for JS injection.
+- **`scripts/build.js`**: Concatenates simulation.js and ui.js into the template placeholder to produce `web/index.html`.
+- **`web/index.html`**: Built artifact, gitignored — do not edit manually.
 
 ### Key Components
 
 #### Monte Carlo Simulation Engine
 - **PERT Distribution**: Uses Beta distribution for task effort modeling
 - **Statistical Functions**: Custom implementation of gamma and normal distributions
-- **Marsaglia-Tsang Algorithm**: For generating gamma random variables (lines 274-301)
+- **Marsaglia-Tsang Algorithm**: For generating gamma random variables (`gammaRandom`, line 7)
 - **Skip Logic**: Handles optional tasks with configurable skip percentages
 
-#### Core Functions
-- `generateTaskEffort()`: Main simulation function handling task effort generation
-- `runSimulation()`: Orchestrates the entire Monte Carlo simulation
+#### Core Functions in `src/simulation.js`
+- `generateTaskEffort()`: Task effort generation with skip logic
+- `simulateProgram()`: Orchestrates a single simulation run
 - `betaDistribution()` & `gammaRandom()`: Statistical distribution generators
+- `scheduleWithCapacityConstraints()`: Capacity-aware work scheduling
+
+#### Core Functions in `src/ui.js`
+- `runSimulation()`: Orchestrates the entire Monte Carlo simulation
 - `displayResults()`: Renders simulation results with capacity analysis
+- `createCharts()`: Chart.js chart creation for distributions and workload
 
 #### UI Components
 - **Task Management**: Dynamic task input grid with add/remove functionality

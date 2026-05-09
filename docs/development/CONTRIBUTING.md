@@ -24,9 +24,21 @@ Thank you for your interest in contributing to this project! This document provi
 
    For more information about pre-commit, see the [official documentation](https://pre-commit.com/).
 
-4. Open `web/index.html` in your browser to test the application
-5. Make your changes
-6. Test thoroughly across different browsers
+4. Install npm dependencies:
+
+   ```bash
+   npm install
+   ```
+
+5. Build the application:
+
+   ```bash
+   npm run build
+   ```
+
+6. Open `web/index.html` in your browser to test the application
+7. Make your changes to files in `src/`
+8. Test thoroughly across different browsers
 
 ### Pre-commit Hooks
 
@@ -46,10 +58,10 @@ If hooks fail, fix the issues and commit again. The hooks help maintain consiste
 
 ### Making Changes
 
-1. **Single File Architecture**: All application code is in `web/index.html`
-2. **Edit directly**: Make changes to the HTML, CSS, and JavaScript within the file
-3. **Test immediately**: Refresh the browser to see changes
-4. **Validate**: Run `npx html-validate web/index.html` to check markup
+1. **Source files**: Edit files in `src/` — `simulation.js` for simulation logic, `ui.js` for UI, `template.html` for HTML/CSS
+2. **Build**: Run `npm run build` to assemble `web/index.html` — do not edit `web/index.html` directly
+3. **Test**: Refresh the browser to see changes
+4. **Validate**: Run `npx eslint src/simulation.js src/ui.js` and `npx html-validate web/index.html`
 
 ### Code Style
 
