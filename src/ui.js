@@ -1,3 +1,5 @@
+import { simulateProgram, findConfidenceRangeSimulations, calculateAggregatedWorkloadDistribution } from './simulation.js';
+
 let chart = null; // Keep for backward compatibility
 let effortChart = null;
 let timelineChart = null;

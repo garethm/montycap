@@ -1,10 +1,10 @@
-function betaDistribution(alpha, beta) {
+export function betaDistribution(alpha, beta) {
     const gamma1 = gammaRandom(alpha);
     const gamma2 = gammaRandom(beta);
     return gamma1 / (gamma1 + gamma2);
 }
 
-function gammaRandom(shape) {
+export function gammaRandom(shape) {
     // Marsaglia and Tsang method
     if (shape < 1) {
         return gammaRandom(shape + 1) * Math.pow(Math.random(), 1 / shape);
@@ -33,14 +33,14 @@ function gammaRandom(shape) {
     }
 }
 
-function normalRandom() {
+export function normalRandom() {
     // Box-Muller transform
     const u = Math.random();
     const v = Math.random();
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
-function generateTaskEffortHelper(optimistic, expected, pessimistic) {
+export function generateTaskEffortHelper(optimistic, expected, pessimistic) {
     const range = pessimistic - optimistic;
     if (range <= 0) return expected;
 
@@ -62,7 +62,7 @@ function generateTaskEffortHelper(optimistic, expected, pessimistic) {
     return optimistic + betaValue * range;
 }
 
-function generateTaskEffort(optimistic, expected, pessimistic, skipPercentage = 0) {
+export function generateTaskEffort(optimistic, expected, pessimistic, skipPercentage = 0) {
     if (skipPercentage > 0) {
         if (Math.random() < (skipPercentage / 100)) {
             return 0;
@@ -71,7 +71,7 @@ function generateTaskEffort(optimistic, expected, pessimistic, skipPercentage = 
     return generateTaskEffortHelper(optimistic, expected, pessimistic);
 }
 
-function simulateProgram(tasks, programQuantity, hoursPerDay = 8, weeklyCapacity = 40) {
+export function simulateProgram(tasks, programQuantity, hoursPerDay = 8, weeklyCapacity = 40) {
     const workItems = [];
     let totalEffort = 0;
     const dailyCapacity = weeklyCapacity / 5;
@@ -113,7 +113,7 @@ function simulateProgram(tasks, programQuantity, hoursPerDay = 8, weeklyCapacity
     };
 }
 
-function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
+export function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
     const maxChunkSize = Math.min(dailyCapacity, taskItem.hours);
 
     if (taskItem.hours <= maxChunkSize) {
@@ -150,7 +150,7 @@ function chunkTask(taskItem, dailyCapacity, hoursPerDay = 8) {
     return chunks;
 }
 
-function scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay) {
+export function scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay) {
     workItems.sort((a, b) => {
         if (a.series !== b.series) return a.series - b.series;
         if (a.taskIndex !== b.taskIndex) return a.taskIndex - b.taskIndex;
@@ -190,7 +190,7 @@ function scheduleWithCapacityConstraints(workItems, weeklyCapacity, hoursPerDay)
     return { scheduledItems, finalTimeline };
 }
 
-function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay) {
+export function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay) {
     let startDay = item.earliestStart;
     const workDays = item.hours / hoursPerDay;
     let attempts = 0;
@@ -230,7 +230,7 @@ function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay) {
     };
 }
 
-function canScheduleInPeriod(startDay, workDays, hours, weeklyUsage, weeklyCapacity) {
+export function canScheduleInPeriod(startDay, workDays, hours, weeklyUsage, weeklyCapacity) {
     if (workDays <= 0 || hours <= 0) return true;
 
     const endDay = startDay + workDays;
@@ -256,7 +256,7 @@ function canScheduleInPeriod(startDay, workDays, hours, weeklyUsage, weeklyCapac
     return true;
 }
 
-function allocateCapacity(startDay, workDays, hours, weeklyUsage) {
+export function allocateCapacity(startDay, workDays, hours, weeklyUsage) {
     if (workDays <= 0 || hours <= 0) return;
 
     const endDay = startDay + workDays;
@@ -275,7 +275,7 @@ function allocateCapacity(startDay, workDays, hours, weeklyUsage) {
     }
 }
 
-function findConfidenceRangeSimulations(simulationData, confidenceTimeline, confidence) {
+export function findConfidenceRangeSimulations(simulationData, confidenceTimeline, confidence) {
     const confidenceIndex = Math.floor(simulationData.length * confidence / 100);
     const rangeSize = Math.max(Math.floor(simulationData.length * 0.02), 5);
 
@@ -295,7 +295,7 @@ function findConfidenceRangeSimulations(simulationData, confidenceTimeline, conf
     return rangeSimulations;
 }
 
-function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
+export function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
     if (!confidenceSimulations || confidenceSimulations.length === 0) {
         return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity, simulationCount: 0 };
     }
@@ -338,7 +338,7 @@ function calculateAggregatedWorkloadDistribution(confidenceSimulations, confiden
     };
 }
 
-function calculateSingleWorkloadDistribution(targetSchedule) {
+export function calculateSingleWorkloadDistribution(targetSchedule) {
     if (!targetSchedule || targetSchedule.length === 0) {
         return { weeklyHours: [], maxWeek: 0 };
     }

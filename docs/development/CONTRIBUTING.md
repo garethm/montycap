@@ -59,9 +59,10 @@ If hooks fail, fix the issues and commit again. The hooks help maintain consiste
 ### Making Changes
 
 1. **Source files**: Edit files in `src/` — `simulation.js` for simulation logic, `ui.js` for UI, `template.html` for HTML/CSS
-2. **Build**: Run `npm run build` to assemble `web/index.html` — do not edit `web/index.html` directly
-3. **Test**: Refresh the browser to see changes
-4. **Validate**: Run `npx eslint src/simulation.js src/ui.js` and `npx html-validate web/index.html`
+2. **Test**: Run `npm test` to verify the property-based tests pass
+3. **Build**: Run `npm run build` to assemble `web/index.html` — do not edit `web/index.html` directly
+4. **Browser test**: Refresh the browser to verify changes visually
+5. **Validate**: Run `npx eslint src/simulation.js src/ui.js` and `npx html-validate web/index.html`
 
 ### Code Style
 
@@ -83,6 +84,18 @@ Before contributing, ensure your changes:
 - **No hardcoded secrets**: Pre-commit hooks will catch these
 
 ## Testing
+
+### Property-Based Tests
+
+The simulation engine has automated property-based tests using fast-check and vitest. Run them with:
+
+```bash
+npm test
+```
+
+Tests cover the core statistical functions in `src/simulation.js` and verify mathematical invariants (e.g. effort always within [optimistic, pessimistic], beta distribution always in [0, 1]). All tests must pass before submitting a pull request.
+
+If you add or modify functions in `src/simulation.js`, add corresponding property tests in `test/simulation.test.js`. See [docs/features/simulation-engine-property-based-tests.md](../features/simulation-engine-property-based-tests.md) for details.
 
 ### Manual Testing Checklist
 
@@ -138,6 +151,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 ### Pull Request Requirements
 
 - [ ] Changes are tested across multiple browsers
+- [ ] `npm test` passes (property-based tests)
 - [ ] Code follows established style guidelines
 - [ ] Pre-commit hooks pass without errors
 - [ ] Security considerations have been reviewed

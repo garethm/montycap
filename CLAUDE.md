@@ -16,6 +16,12 @@ Assembles `src/template.html`, `src/simulation.js`, and `src/ui.js` into `web/in
 
 `web/index.html` is gitignored — always run the build before opening the app in a browser.
 
+### Test
+```
+npm test
+```
+Runs property-based tests in `test/` using vitest and fast-check.
+
 ### Development Tools
 - JavaScript lint: `npx eslint src/simulation.js src/ui.js`
 - HTML validation: `npx html-validate web/index.html`
