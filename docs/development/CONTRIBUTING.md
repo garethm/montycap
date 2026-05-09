@@ -126,9 +126,24 @@ Test your changes in:
 
 ## Submitting Changes
 
+### Branch Naming
+
+Branches must follow the convention `<type>/<short-description>`:
+
+| Type | Use for |
+|---|---|
+| `feat/` | New features |
+| `fix/` | Bug fixes |
+| `refactor/` | Code restructuring without behaviour change |
+| `test/` | Adding or updating tests |
+| `docs/` | Documentation only |
+| `chore/` | Maintenance — dependencies, CI, tooling |
+
+Keep each branch focused on a single concern. Do not mix unrelated changes on one branch.
+
 ### Pull Request Process
 
-1. **Create a feature branch**: `git checkout -b feature/your-feature-name`
+1. **Create a branch**: `git checkout -b <type>/<short-description>`
 2. **Make your changes**: Follow the guidelines above
 3. **Test thoroughly**: Complete the testing checklist
 4. **Ensure hooks pass**: Commit should pass all pre-commit checks
