@@ -11,19 +11,28 @@ This project is a single-file HTML application. Only the latest version on the m
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please report it by:
+Please report vulnerabilities using GitHub's private vulnerability reporting:
 
-1. **Do NOT** open a public issue
-2. Email the maintainer directly or use GitHub's private vulnerability reporting
-3. Include a clear description of the vulnerability
-4. Provide steps to reproduce if applicable
-5. Include any potential impact assessment
+- **GitHub security advisories**: https://github.com/garethm/montycap/security/advisories/new
 
-### What to expect:
-- Acknowledgment within 48 hours
-- Initial assessment within 1 week
-- Regular updates on progress
-- Credit in security advisories (if desired)
+Do **not** open a public GitHub issue for security vulnerabilities, as this exposes the vulnerability before a fix is available.
+
+When reporting, please include:
+
+1. A clear description of the vulnerability
+2. Steps to reproduce
+3. Potential impact assessment
+
+### Disclosure Timeline
+
+We follow coordinated vulnerability disclosure practices:
+
+- **Acknowledgment**: within 48 hours of receiving the report
+- **Initial assessment**: within 7 days
+- **Resolution target**: within 90 days of disclosure for standard vulnerabilities; critical vulnerabilities will be prioritised for faster resolution
+- **Public disclosure**: we will coordinate public disclosure with the reporter, typically no later than 90 days after the vulnerability is reported
+
+We will credit reporters in security advisories unless anonymity is requested.
 
 ## Security Considerations
 
