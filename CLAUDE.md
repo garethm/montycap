@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a single-file Monte Carlo simulation tool for capacity planning. The application runs in the browser as a self-contained `web/index.html`, assembled from source files in `src/` via a build step.
 
+## Git Branch Policy
+
+Before starting any work, check the current branch with `git branch` and verify it is appropriate for the task being requested. If the branch name does not match the work (e.g. the branch is named for a previous unrelated fix), create a new branch first:
+
+```
+git checkout main
+git pull
+git checkout -b <type>/<short-description>
+```
+
+Branch naming convention: `<type>/<short-description>` where type is one of `feat`, `fix`, `refactor`, `test`, `docs`, or `chore`. Keep branches focused on a single concern — do not mix unrelated changes on one branch.
+
 ## Commands
 
 ### Build
