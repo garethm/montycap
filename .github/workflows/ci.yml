@@ -30,19 +30,18 @@ jobs:
         node-version: '20'
 
     - name: Install dependencies
-      run: |
-        npm install -g html-validate@10.13.1 eslint@10.3.0
+      run: npm ci
 
     - name: Validate HTML structure
       run: |
-        html-validate web/index.html
+        npx html-validate web/index.html
 
     - name: Lint JavaScript
       run: |
         sed -n '/<script>/,/<\/script>/p' web/index.html | sed '1d;$d' > temp.js
         if [ -s temp.js ]; then
           echo 'export default [{ languageOptions: { ecmaVersion: 2020 } }];' > eslint.config.mjs
-          eslint temp.js || true
+          npx eslint temp.js || true
         fi
         rm -f temp.js eslint.config.mjs
 
