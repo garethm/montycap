@@ -30,10 +30,13 @@ jobs:
         node-version: '20'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --ignore-scripts
 
     - name: Lint JavaScript
       run: npx eslint src/simulation.js src/ui.js
+
+    - name: Test
+      run: npm test
 
     - name: Build
       run: npm run build

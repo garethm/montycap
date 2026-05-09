@@ -3,7 +3,7 @@ export default [
         files: ['src/simulation.js', 'src/ui.js'],
         languageOptions: {
             ecmaVersion: 2020,
-            sourceType: 'script',
+            sourceType: 'module',
             globals: {
                 window: 'readonly',
                 document: 'readonly',
