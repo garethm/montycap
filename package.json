@@ -1,0 +1,10 @@
+{
+  "name": "montycap",
+  "version": "1.0.0",
+  "description": "Monte Carlo simulation tool for capacity planning",
+  "private": true,
+  "devDependencies": {
+    "html-validate": "10.13.1",
+    "eslint": "10.3.0"
+  }
+}
