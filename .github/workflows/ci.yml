@@ -31,7 +31,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm install -g html-validate eslint
+        npm install -g html-validate@10.13.1 eslint@10.3.0
 
     - name: Validate HTML structure
       run: |
@@ -39,12 +39,12 @@ jobs:
 
     - name: Lint JavaScript
       run: |
-        # Extract and lint JavaScript from HTML
         sed -n '/<script>/,/<\/script>/p' web/index.html | sed '1d;$d' > temp.js
         if [ -s temp.js ]; then
-          npx eslint temp.js --env browser --parserOptions '{"ecmaVersion": 2020}' || true
+          echo 'export default [{ languageOptions: { ecmaVersion: 2020 } }];' > eslint.config.mjs
+          eslint temp.js || true
         fi
-        rm -f temp.js
+        rm -f temp.js eslint.config.mjs
 
     - name: Check for security issues
       run: |
