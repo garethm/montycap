@@ -22,7 +22,9 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 **Hard limits — input-level rejection:**
 - Inputs for simulations and program quantity enforce their maximum values via `max` attributes in HTML and validation checks in JavaScript
 - When a value exceeds the limit the input is styled as invalid (red border) and the Run button is disabled until corrected
-- An inline error message appears adjacent to the offending input explaining the limit
+- The Run button is visually styled as inactive (greyed out, not-allowed cursor) when disabled, so it is clearly distinguishable from an active button
+- The Run button's tooltip describes which validation is currently failing (e.g. "Simulation runs exceed the maximum of 25,000"), surfacing the reason without requiring the user to find the error message in the form
+- An inline error message also appears adjacent to the offending input explaining the limit
 
 **Task count limit:**
 - The Add Task button is disabled once 100 tasks are present
@@ -97,6 +99,7 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 
 - Each numeric input is validated on `input` and `change` events
 - A value below `min` or above `max` renders the input invalid and disables Run
+- When disabled, the Run button is visually greyed out (not merely unclickable) and its tooltip names the failing validation
 - Error messages appear inline adjacent to the relevant input, not in alert dialogs
 - The complexity budget warning is an inline banner, not a blocking dialog — the user can proceed
 - Rejection (not clamping) is the model for hard limits: the run does not start until the user corrects the value

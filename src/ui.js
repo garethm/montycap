@@ -83,22 +83,25 @@ function runAnyway() {
 
 function validateInputLimits() {
     const checks = [
-        { id: 'simulations', max: MAX_SIMULATIONS, errorId: 'simulationsError' },
-        { id: 'programQuantity', max: MAX_PROGRAM_QUANTITY, errorId: 'programQuantityError' },
+        { id: 'simulations', max: MAX_SIMULATIONS, errorId: 'simulationsError', label: `Simulation runs exceed the maximum of ${MAX_SIMULATIONS.toLocaleString()}` },
+        { id: 'programQuantity', max: MAX_PROGRAM_QUANTITY, errorId: 'programQuantityError', label: `Program quantity exceeds the maximum of ${MAX_PROGRAM_QUANTITY}` },
     ];
-    let valid = true;
-    for (const { id, max, errorId } of checks) {
+    const failures = [];
+    for (const { id, max, errorId, label } of checks) {
         const input = document.getElementById(id);
         const errSpan = document.getElementById(errorId);
         const value = parseInt(input.value);
         const over = value > max;
         input.classList.toggle('input-error', over);
         if (errSpan) errSpan.style.display = over ? 'block' : 'none';
-        if (over) valid = false;
+        if (over) failures.push(label);
     }
     const runButton = document.getElementById('runButton');
-    if (runButton) runButton.disabled = !valid;
-    return valid;
+    if (runButton) {
+        runButton.disabled = failures.length > 0;
+        runButton.title = failures.length > 0 ? failures.join('; ') : '';
+    }
+    return failures.length === 0;
 }
 
 async function runSimulation() {
