@@ -18,7 +18,7 @@ Thank you for your interest in contributing to this project! This document provi
 3. Install pre-commit hooks (if not already installed on your system):
 
    ```bash
-   pip install pre-commit
+   pipx install pre-commit  # recommended; or: pip install pre-commit
    pre-commit install
    ```
 
