@@ -15,16 +15,29 @@ A web-based Monte Carlo simulation tool for capacity planning that helps estimat
 
 ## Getting Started
 
-1. Open `web/index.html` in your web browser
-2. Configure your simulation settings:
+```bash
+git clone <repo-url>
+cd montycap
+npm install --ignore-scripts
+npm test
+npm run build
+```
+
+Then open `web/index.html` in your web browser.
+
+> `web/index.html` is assembled from source files in `src/` and is not checked into git — you must run `npm run build` before opening the app for the first time and after any changes to `src/`.
+
+Once open:
+
+1. Configure your simulation settings:
    - Available capacity (person-days)
    - Number of simulation runs (default: 10,000)
    - Confidence level (default: 80%)
-3. Add tasks with their estimates:
+2. Add tasks with their estimates:
    - Task name and quantity
    - Skip percentage (for optional tasks)
    - Optimistic, expected, and pessimistic effort estimates
-4. Click "Run Monte Carlo Simulation" to see results
+3. Click "Run Monte Carlo Simulation" to see results
 
 ## Usage
 
@@ -69,6 +82,9 @@ Task Name,Quantity,Skip %,Optimistic,Expected,Pessimistic
 - **Visualization**: Chart.js for distribution charts
 - **Statistics**: Custom implementation of Beta/PERT distributions
 - **File Handling**: FileReader API for CSV import/export
+- **Build**: Node.js script assembling `src/` into `web/index.html`
+- **Testing**: vitest + fast-check (property-based tests), happy-dom for DOM tests
+- **Linting**: ESLint, html-validate
 
 ## Statistical Methods
 
@@ -99,13 +115,17 @@ MIT License - see LICENSE file for details
 
 ## Contributing
 
-This is a single-file application. To contribute:
+1. Fork the repository and clone your fork
+2. Create a branch: `git checkout -b <type>/<short-description>` (types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
+3. Install dependencies: `npm install --ignore-scripts`
+4. Install pre-commit hooks: `pip install pre-commit && pre-commit install`
+5. Edit source files in `src/` — do not edit `web/index.html` directly
+6. Run tests: `npm test`
+7. Build: `npm run build`
+8. Test in multiple browsers
+9. Submit a pull request
 
-1. Fork the repository
-2. Set up pre-commit hooks (see [Contributing Guide](docs/development/CONTRIBUTING.md))
-3. Make changes to `web/index.html`
-4. Test in multiple browsers
-5. Submit a pull request
+New direct dependencies require an ADR before being added to `package.json` — see [ADR-0005](docs/adr/0005-dependency-decision-policy.md).
 
 For detailed contribution guidelines, see [CONTRIBUTING.md](docs/development/CONTRIBUTING.md).
 
