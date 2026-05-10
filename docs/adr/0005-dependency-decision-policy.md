@@ -16,20 +16,27 @@ A lightweight, consistent policy ensures that each addition to the dependency gr
 
 ### Adding a dependency
 
-Any new direct dependency — whether a production or development dependency — requires an ADR before it is added to `package.json`. The ADR must document:
+Any new direct dependency requires an ADR before it is introduced. This policy applies to:
+
+- **npm dependencies** — any addition to `dependencies` or `devDependencies` in `package.json`
+- **CDN-linked runtime libraries** — any third-party script added to `src/template.html` via a `<script src="…">` tag
+
+The ADR must document:
 
 1. **What the dependency does** and why it is needed
 2. **Alternatives considered** and why they were not chosen
-3. **Supply chain implications**: approximate transitive dependency count, whether lifecycle scripts are required, and how it fits within the existing pinning and `--ignore-scripts` policy
+3. **Supply chain implications**, which differ by dependency type:
+   - *npm*: approximate transitive dependency count, whether lifecycle scripts are required, and how it fits within the existing pinning and `--ignore-scripts` policy
+   - *CDN*: no transitive npm packages are introduced, but the CDN URL and version must be pinned with a Subresource Integrity (SRI) hash in `src/template.html`; the ADR must record the pinned version and note that the SRI hash must be updated on upgrade
 4. **Health assessment** against the criteria below
 
-Transitive dependencies introduced by an approved direct dependency do not each require their own ADR, but the ADR for the direct dependency should acknowledge the transitive surface.
+Transitive dependencies introduced by an approved direct npm dependency do not each require their own ADR, but the ADR for the direct dependency should acknowledge the transitive surface.
 
-This policy applies to both `dependencies` and `devDependencies`. Dev dependencies run in CI and developer environments and carry the same supply chain risk as production dependencies in this context.
+Dev dependencies run in CI and developer environments and carry the same supply chain risk as production dependencies in this context.
 
 ### Existing dependencies
 
-The four dependencies present when this ADR was adopted (`eslint`, `fast-check`, `html-validate`, `vitest`) are grandfathered in. They do not require retroactive ADRs for their original adoption decision, but they must be included in the first periodic health review and any findings recorded at that time.
+The four npm dependencies present when this ADR was adopted (`eslint`, `fast-check`, `html-validate`, `vitest`) are grandfathered in. The CDN dependency Chart.js, also present at that time, is similarly grandfathered in. None of these require retroactive ADRs for their original adoption decision, but they must be included in the first periodic health review and any findings recorded at that time.
 
 ### Periodic review
 
@@ -94,6 +101,7 @@ Writing an ADR for a dependency takes less time than the evaluation that should 
 - Periodic review requires discipline to schedule and act on; without a trigger it can be deferred indefinitely
 - Health criteria involve judgement calls (e.g. what counts as "responsive"); the table provides guidance but not a mechanical pass/fail
 - Does not cover indirect upgrades to transitive dependencies (Dependabot PRs); those are handled by the existing lock file and integrity verification controls
+- CDN dependency compliance is not mechanically enforceable: there is no CDN equivalent of `package-lock.json`. Correct SRI pinning and health assessment depend on the same human review and ADR discipline as the rest of the policy
 
 ## Alternatives Considered
 
@@ -125,4 +133,5 @@ Use a tool such as `license-checker` or a custom script to block unapproved pack
 
 - [ADR-0003: Property-Based Testing](./0003-property-based-testing.md) — establishes the supply chain controls this policy builds on
 - [ADR-0004: Branch Policy](./0004-branch-policy.md) — analogous lightweight process policy
+- [ADR-0008: PapaParse CDN Dependency](./0008-papaparse-cdn-dependency.md) — first CDN dependency added under the extended policy
 - [Dependency review log](../development/dependency-review-log.md)
