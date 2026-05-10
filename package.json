@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test"
   },
   "devDependencies": {
     "eslint": "10.3.0",
