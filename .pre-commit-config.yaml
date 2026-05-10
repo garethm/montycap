@@ -1,4 +1,12 @@
 repos:
+- repo: local
+  hooks:
+  - id: validate
+    name: Validate application
+    language: system
+    entry: npm run validate
+    files: ^src/
+    pass_filenames: false
 - repo: https://github.com/gitleaks/gitleaks
   rev: v8.16.3
   hooks:
