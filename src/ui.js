@@ -254,18 +254,7 @@ async function runSimulationAsync() {
 
     const confidenceSimulations = findConfidenceRangeSimulations(simulationData, timelineConfidenceValue, confidence);
 
-    const debugInfo = {
-        targetTimeline: timelineConfidenceValue,
-        targetEffort: effortConfidenceValue,
-        actualSimulations: confidenceSimulations.map(s => ({
-            effort: s.effort.toFixed(1),
-            timeline: s.timeline.toFixed(1)
-        })),
-        averageEffort: (confidenceSimulations.reduce((sum, s) => sum + s.effort, 0) / confidenceSimulations.length).toFixed(1)
-    };
-    console.log('Workload Debug:', debugInfo);
-
-    const workloadData = calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo);
+    const workloadData = calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity);
 
     displayResults({
         effort: {
