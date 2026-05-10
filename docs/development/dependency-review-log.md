@@ -30,7 +30,7 @@ Criteria reference: see [ADR-0005 — Assessing dependency health](../adr/0005-d
 ## Review 2026-05-10
 
 **Reviewer**: Gareth Marshall
-**Scope**: All dependencies — first periodic review; grandfathered packages (`eslint`, `fast-check`, `html-validate`, `vitest`) assessed for the first time per ADR-0005; `happy-dom` reviewed in ADR-0006 (2026-05-10) and included here for completeness.
+**Scope**: All dependencies — first periodic review; grandfathered packages (`eslint`, `fast-check`, `html-validate`, `vitest`) and grandfathered CDN dependency (`Chart.js`) assessed for the first time per ADR-0005; `happy-dom` reviewed in ADR-0006 (2026-05-10) and included here for completeness. `PapaParse` reviewed in ADR-0008 (2026-05-10) and omitted here as its health assessment was recorded at adoption. Chart.js was inadvertently omitted from the initial entry and added by supplement.
 
 | Dependency | Version | Maintained | Security | Responsiveness | Downloads | Continuity | Not deprecated | Outcome |
 |---|---|---|---|---|---|---|---|---|
@@ -39,6 +39,7 @@ Criteria reference: see [ADR-0005 — Assessing dependency health](../adr/0005-d
 | `html-validate` | 10.13.1 | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | Monitor |
 | `vitest` | 4.1.5 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | No action |
 | `happy-dom` | 20.9.0 | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | Monitor |
+| `Chart.js` (CDN) | 4.4.1 → 4.5.0 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Updated to 4.5.0 |
 
 **Notes**:
 
@@ -48,6 +49,7 @@ Criteria reference: see [ADR-0005 — Assessing dependency health](../adr/0005-d
 - **html-validate** (397K downloads/week): v10.15.0 released 2026-05-04; we are pinned to 10.13.1. Lower download volume is expected for a specialised HTML linting tool rather than a sign of community abandonment — the release cadence (multiple releases per month in 2026) is healthy. Hosted on GitLab. Single maintainer (`ext` / sidvind.com). Flagged for monitoring. No CVEs, no deprecation. Consider updating the pinned version to 10.15.0 in a maintenance pass.
 - **vitest** (59M downloads/week): v4.1.5 released 2026-04-21; v5.0.0-beta.2 published 2026-05-05, indicating an active major version cycle. Multiple named maintainers including Evan You (creator of Vite/Vue) and Anthony Fu. No concerns. Monitor v5 stable release for a future upgrade decision.
 - **happy-dom** (8.2M downloads/week): v20.9.0 released 2026-04-13. Versions 20.8.8 and 20.8.9 (March 2026) included security fixes for a cookie-forwarding vulnerability and an ESM export-name interpolation issue; our pinned version incorporates both patches. Single maintainer (David Ortner, `davidortner`). Flagged for monitoring. Detailed health assessment recorded in ADR-0006 at adoption.
+- **Chart.js** (CDN, ~11.1M npm downloads/week): grandfathered CDN dependency per ADR-0005. Actively maintained with five named maintainers (`nnnick`, `tannerlinsley`, `etimberg`, `simonbrunel`, `chartjs-ci`); no single-maintainer risk. No CVEs in the 4.x line — Snyk confirms 4.4.1 has no known vulnerabilities; the only historical CVE (CVE-2020-7746, prototype pollution, 2020) affects the 2.x line only and was fixed in 2.9.4. Not deprecated; 4.x is the current stable line. The pinned version (4.4.1, January 2024) was 10 releases behind the latest stable at review time (4.5.1 on npm; 4.5.0 on cdnjs). None of the intervening releases contained security fixes. CDN pin updated to 4.5.0 with the corresponding SRI hash as a routine maintenance action. Note: Dependabot does not cover CDN dependencies — version currency must be verified manually at each review.
 
 **Single-maintainer monitoring**: three packages (`fast-check`, `html-validate`, `happy-dom`) are maintained by a single individual with no organisational backing. Each fails only the Continuity criterion; none triggers the two-criterion threshold requiring a replacement ADR. These packages should be observed at each subsequent review for signs of disengagement (no releases for 12+ months, unacknowledged issues, npm deprecation notice).
 
