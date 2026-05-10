@@ -562,17 +562,33 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
     const tasksDiv = document.getElementById('tasks');
     const taskDiv = document.createElement('div');
     taskDiv.className = 'task-input';
-    taskDiv.innerHTML = `
-                <input type="text" value="${name}">
-                <input type="number" value="${skipPercentage}" min="0" max="95" step="5">
-                <input type="number" value="${workOpt}" min="0.1" step="0.1">
-                <input type="number" value="${workExp}" min="0.1" step="0.1">
-                <input type="number" value="${workPess}" min="0.1" step="0.1">
-                <input type="number" value="${waitOpt}" min="0" step="0.1">
-                <input type="number" value="${waitExp}" min="0" step="0.1">
-                <input type="number" value="${waitPess}" min="0" step="0.1">
-                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
-            `;
+
+    const inputSpecs = [
+        [name,           { type: 'text' }],
+        [skipPercentage, { type: 'number', min: '0', max: '95', step: '5' }],
+        [workOpt,        { type: 'number', min: '0.1', step: '0.1' }],
+        [workExp,        { type: 'number', min: '0.1', step: '0.1' }],
+        [workPess,       { type: 'number', min: '0.1', step: '0.1' }],
+        [waitOpt,        { type: 'number', min: '0', step: '0.1' }],
+        [waitExp,        { type: 'number', min: '0', step: '0.1' }],
+        [waitPess,       { type: 'number', min: '0', step: '0.1' }],
+    ];
+
+    for (const [value, attrs] of inputSpecs) {
+        const input = document.createElement('input');
+        for (const [attr, val] of Object.entries(attrs)) {
+            input.setAttribute(attr, val);
+        }
+        input.value = value;
+        taskDiv.appendChild(input);
+    }
+
+    const button = document.createElement('button');
+    button.className = 'remove-btn';
+    button.textContent = 'Remove';
+    button.addEventListener('click', function() { removeTask(this); });
+    taskDiv.appendChild(button);
+
     tasksDiv.appendChild(taskDiv);
 }
 
