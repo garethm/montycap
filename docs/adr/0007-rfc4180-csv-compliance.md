@@ -4,6 +4,8 @@
 
 Accepted
 
+> **Extended by [ADR-0008: PapaParse as the CSV Library](./0008-papaparse-cdn-dependency.md)**: this ADR mandates RFC 4180 compliance and decides to use a CDN-loaded library, but defers the specific library selection. ADR-0008 records that decision — PapaParse was chosen.
+
 ## Context
 
 The application supports importing and exporting task configurations as CSV files. The current implementation in `src/ui.js` (`parseCSV`, line 548, and the export block, line 613) does not comply with [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180), the de-facto standard for CSV interchange.

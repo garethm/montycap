@@ -4,6 +4,10 @@
 
 Accepted
 
+> **Amended by [ADR-0002: Source Restructuring and Build Step](./0002-source-restructuring-and-build-step.md)**: the structure described here was subsequently revised to add `src/` (simulation and UI source files) and `scripts/` (build tooling) directories. `web/index.html` is now a built artifact assembled from `src/` and is gitignored rather than directly edited.
+>
+> **Amended by [ADR-0003: Property-Based Testing](./0003-property-based-testing.md)**: the adoption of vitest and fast-check introduced a `test/` directory not reflected in the original structure.
+
 ## Context
 
 The repository originally had a flat structure with the main application file (`index.html`) at the root alongside documentation and configuration files. This made it difficult to:

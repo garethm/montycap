@@ -4,6 +4,8 @@
 
 Accepted
 
+> **Amended by [ADR-0006: happy-dom as the vitest DOM Test Environment](./0006-happy-dom-test-environment.md)**: the Consequences section below refers to `jsdom` as the DOM test environment for `src/ui.js`. ADR-0006 supersedes that detail — `happy-dom` was chosen instead due to its smaller transitive dependency surface and vitest's own recommendation.
+
 ## Context
 
 The application has two distinct areas where testing provides high value, each with characteristics that make example-based unit tests a poor fit:
