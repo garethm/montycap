@@ -7,7 +7,10 @@ export function betaDistribution(alpha, beta) {
 export function gammaRandom(shape) {
     // Marsaglia and Tsang method
     if (shape < 1) {
-        return gammaRandom(shape + 1) * Math.pow(Math.random(), 1 / shape);
+        // Math.pow(u, 1/shape) underflows to 0 for small u when shape is small.
+        // Clamp to Number.MIN_VALUE: the true value is near-zero, not zero.
+        const scale = Math.pow(Math.random(), 1 / shape) || Number.MIN_VALUE;
+        return gammaRandom(shape + 1) * scale;
     }
 
     const d = shape - 1/3;
