@@ -596,6 +596,9 @@ function createWorkloadChart(workloadData) {
     });
 }
 
+const MAX_CSV_BYTES = 1 * 1024 * 1024; // 1 MB
+const ALLOWED_CSV_TYPES = ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'];
+
 function loadFromFile() {
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
@@ -605,17 +608,28 @@ function loadFromFile() {
         return;
     }
 
+    if (!file.name.endsWith('.csv')) {
+        alert('Invalid file type. Please upload a CSV file (.csv).');
+        return;
+    }
+
+    if (file.type && !ALLOWED_CSV_TYPES.includes(file.type)) {
+        alert('Invalid file type. Please upload a CSV file.');
+        return;
+    }
+
+    if (file.size > MAX_CSV_BYTES) {
+        alert(`File is too large (${(file.size / 1024).toFixed(0)} KB). Please upload a CSV file smaller than 1 MB.`);
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function(e) {
         const data = e.target.result;
-        if (file.name.endsWith('.csv')) {
-            parseCSV(data);
-        }
+        parseCSV(data);
     };
 
-    if (file.name.endsWith('.csv')) {
-        reader.readAsText(file);
-    }
+    reader.readAsText(file);
 }
 
 export function parseCSV(data) {
