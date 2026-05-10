@@ -649,7 +649,7 @@ export function parseCSV(data) {
     document.getElementById('tasks').innerHTML = '';
     for (const row of validRows) {
         const values = headers.map(h => row[h] ?? '');
-        addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
+        addTaskFromData(unsanitizeCsvCell(values[0]), values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
     }
 }
 
@@ -690,8 +690,41 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
 
 const CSV_EXPORT_HEADERS = ['Task Name', 'Skip %', 'Work Optimistic (hrs)', 'Work Expected (hrs)', 'Work Pessimistic (hrs)', 'Wait Optimistic (days)', 'Wait Expected (days)', 'Wait Pessimistic (days)'];
 
+// Characters that weak spreadsheet readers (Excel, Sheets, LibreOffice) treat as formula starters.
+const CSV_INJECTION_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
+// Characters that must be escaped on export. Includes the injection prefixes plus the single
+// quote itself, so the escaping scheme is self-consistent: a task name already starting with '\''
+// gets a second one prepended, making unsanitize a reliable left-inverse with no ambiguous zone
+// (analogous to CSV's own "" escaping for double-quotes).
+const CSV_ESCAPE_PREFIXES = [...CSV_INJECTION_PREFIXES, "'"];
+
+// Prepend a single quote to neutralise formula injection in spreadsheet readers.
+// In Google Sheets and LibreOffice the quote acts as a silent text-mode prefix and is not
+// displayed. In Excel it appears as a literal character — a minor visual artefact, but the
+// formula is still blocked. Numeric fields cannot be formula-injected and are left unchanged.
+export function sanitizeCsvCell(value) {
+    if (typeof value === 'string' && CSV_ESCAPE_PREFIXES.some(p => value.startsWith(p))) {
+        return "'" + value;
+    }
+    return value;
+}
+
+// Strip the leading quote added by sanitizeCsvCell on re-import so round-tripping preserves
+// the original task name. Matches only the digraph '\'' + escape-prefix (e.g. '= or ''),
+// which is the only pattern sanitizeCsvCell ever produces — a genuine task name starting with
+// an apostrophe followed by any other character is left untouched.
+export function unsanitizeCsvCell(value) {
+    if (typeof value === 'string' && value.length > 1 && value[0] === "'" &&
+        CSV_ESCAPE_PREFIXES.some(p => value.slice(1).startsWith(p))) {
+        return value.slice(1);
+    }
+    return value;
+}
+
 export function buildCSV(tasks) {
-    return Papa.unparse({ fields: CSV_EXPORT_HEADERS, data: tasks }, { newline: '\r\n' });
+    const sanitized = tasks.map(row => [sanitizeCsvCell(row[0]), ...row.slice(1)]);
+    return Papa.unparse({ fields: CSV_EXPORT_HEADERS, data: sanitized }, { newline: '\r\n' });
 }
 
 function exportToFile() {
