@@ -76,6 +76,14 @@ Task Name,Quantity,Skip %,Optimistic,Expected,Pessimistic
 "Supplier Follow-up",1,60,1,3,8
 ```
 
+### CSV injection mitigation
+
+When exporting, task names that begin with a spreadsheet formula character (`=`, `+`, `-`, `@`, tab, carriage return) are prefixed with a single quote (`'`) to prevent spreadsheet applications from executing them as formulas when the file is opened.
+
+In **Google Sheets** and **LibreOffice Calc** the leading `'` acts as a silent text-mode prefix and is not displayed in the cell. In **Microsoft Excel** it appears as a literal character, so a task named `=My formula` will display as `'=My formula` — the formula is blocked but there is a minor visual artefact.
+
+If you import an exported CSV back into the tool the leading `'` is stripped automatically, so task names round-trip correctly. Note that this is a defence-in-depth measure: a hand-crafted CSV can still contain formula strings, so you should only open CSV files from sources you trust.
+
 ## Technology Stack
 
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
