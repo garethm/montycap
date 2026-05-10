@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, beforeEach } from 'vitest';
+import { describe, it, beforeEach, expect } from 'vitest';
 import fc from 'fast-check';
 import { addTaskFromData, parseCSV } from '../src/ui.js';
 
@@ -22,8 +22,10 @@ function taskDivChildren(taskDiv) {
     return [...taskDiv.children];
 }
 
+const CSV_HEADERS = ['Task Name', 'Skip %', 'Work Opt', 'Work Exp', 'Work Pess', 'Wait Opt', 'Wait Exp', 'Wait Pess'];
+
 function makeCSV(name) {
-    return `Task Name,Skip %,Work Opt,Work Exp,Work Pess,Wait Opt,Wait Exp,Wait Pess\n"${name}",0,1,2,3,0,0,0`;
+    return Papa.unparse({ fields: CSV_HEADERS, data: [[name, '0', '1', '2', '3', '0', '0', '0']] });
 }
 
 beforeEach(() => {
@@ -56,7 +58,7 @@ describe('addTaskFromData', () => {
 
 describe('parseCSV', () => {
     it('only input and button elements appear in task divs for any name', () => {
-        fc.assert(fc.property(fc.string().filter(s => !s.includes('\n') && !s.includes(',')), (name) => {
+        fc.assert(fc.property(fc.string().filter(s => !s.includes('\n')), (name) => {
             document.body.innerHTML = '<div id="tasks"></div>';
             parseCSV(makeCSV(name));
             const taskDiv = document.querySelector('.task-input');
@@ -66,11 +68,30 @@ describe('parseCSV', () => {
     });
 
     it('no event handler attributes on any input element for any name', () => {
-        fc.assert(fc.property(fc.string().filter(s => !s.includes('\n') && !s.includes(',')), (name) => {
+        fc.assert(fc.property(fc.string().filter(s => !s.includes('\n')), (name) => {
             document.body.innerHTML = '<div id="tasks"></div>';
             parseCSV(makeCSV(name));
             const inputs = document.querySelectorAll('.task-input input');
             return [...inputs].every(el => !hasEventHandlerAttribute(el));
         }));
+    });
+
+    it('preserves task name containing a comma', () => {
+        parseCSV(makeCSV('Design, build, test'));
+        const nameInput = document.querySelector('.task-input input');
+        expect(nameInput.value).toBe('Design, build, test');
+    });
+
+    it('preserves task name containing a double-quote', () => {
+        parseCSV(makeCSV('Say "hello"'));
+        const nameInput = document.querySelector('.task-input input');
+        expect(nameInput.value).toBe('Say "hello"');
+    });
+
+    it('accepts CRLF line endings', () => {
+        const crlf = CSV_HEADERS.join(',') + '\r\n' + '"My task",0,1,2,3,0,0,0\r\n';
+        parseCSV(crlf);
+        const nameInput = document.querySelector('.task-input input');
+        expect(nameInput.value).toBe('My task');
     });
 });

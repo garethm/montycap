@@ -546,13 +546,14 @@ function loadFromFile() {
 }
 
 export function parseCSV(data) {
-    const lines = data.trim().split('\n');
+    const result = Papa.parse(data, { header: true, skipEmptyLines: true });
 
     document.getElementById('tasks').innerHTML = '';
 
-    for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        if (values.length >= 8) {
+    const headers = result.meta.fields;
+    for (const row of result.data) {
+        const values = headers.map(h => row[h] ?? '');
+        if (values.length >= 8 && values[0]) {
             addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
         }
     }
