@@ -15,17 +15,32 @@ function addTask() {
     if (tasksDiv.querySelectorAll('.task-input').length >= MAX_TASKS) return;
     const taskDiv = document.createElement('div');
     taskDiv.className = 'task-input';
-    taskDiv.innerHTML = `
-                <input type="text" placeholder="Task name">
-                <input type="number" placeholder="Skip %" min="0" max="95" step="5" value="0" title="% chance task can be skipped">
-                <input type="number" placeholder="Work Opt" min="0.1" step="0.1" title="Work effort optimistic (hours)">
-                <input type="number" placeholder="Work Exp" min="0.1" step="0.1" title="Work effort expected (hours)">
-                <input type="number" placeholder="Work Pess" min="0.1" step="0.1" title="Work effort pessimistic (hours)">
-                <input type="number" placeholder="Wait Opt" min="0" step="0.1" value="0" title="Wait time optimistic">
-                <input type="number" placeholder="Wait Exp" min="0" step="0.1" value="0" title="Wait time expected">
-                <input type="number" placeholder="Wait Pess" min="0" step="0.1" value="0" title="Wait time pessimistic">
-                <button class="remove-btn" onclick="removeTask(this)">Remove</button>
-            `;
+
+    const inputSpecs = [
+        { type: 'text',   placeholder: 'Task name' },
+        { type: 'number', placeholder: 'Skip %',    min: '0',   max: '95', step: '5',  value: '0', title: '% chance task can be skipped' },
+        { type: 'number', placeholder: 'Work Opt',  min: '0.1', step: '0.1', title: 'Work effort optimistic (hours)' },
+        { type: 'number', placeholder: 'Work Exp',  min: '0.1', step: '0.1', title: 'Work effort expected (hours)' },
+        { type: 'number', placeholder: 'Work Pess', min: '0.1', step: '0.1', title: 'Work effort pessimistic (hours)' },
+        { type: 'number', placeholder: 'Wait Opt',  min: '0',   step: '0.1', value: '0', title: 'Wait time optimistic' },
+        { type: 'number', placeholder: 'Wait Exp',  min: '0',   step: '0.1', value: '0', title: 'Wait time expected' },
+        { type: 'number', placeholder: 'Wait Pess', min: '0',   step: '0.1', value: '0', title: 'Wait time pessimistic' },
+    ];
+
+    for (const attrs of inputSpecs) {
+        const input = document.createElement('input');
+        for (const [attr, val] of Object.entries(attrs)) {
+            input.setAttribute(attr, val);
+        }
+        taskDiv.appendChild(input);
+    }
+
+    const button = document.createElement('button');
+    button.className = 'remove-btn';
+    button.textContent = 'Remove';
+    button.addEventListener('click', function() { removeTask(this); });
+    taskDiv.appendChild(button);
+
     tasksDiv.appendChild(taskDiv);
     updateTaskLimitUI();
 }
@@ -67,7 +82,13 @@ function showComplexityWarning(ops) {
     const warning = document.getElementById('complexityWarning');
     if (!warning) return;
     const opsM = (ops / 1000000).toFixed(1);
-    warning.innerHTML = `This configuration (~${opsM}M operations) may take a long time. Reduce simulation runs, program quantity, or tasks — or <button onclick="runAnyway()">Run anyway</button>`;
+    const btn = document.createElement('button');
+    btn.textContent = 'Run anyway';
+    btn.addEventListener('click', runAnyway);
+    warning.replaceChildren(
+        document.createTextNode(`This configuration (~${opsM}M operations) may take a long time. Reduce simulation runs, program quantity, or tasks — or `),
+        btn
+    );
     warning.style.display = 'block';
 }
 
@@ -271,134 +292,115 @@ async function runSimulationAsync() {
     });
 }
 
+function el(tag, className, ...children) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    for (const child of children) {
+        node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    }
+    return node;
+}
+
+function metric(value, label) {
+    return el('div', 'metric',
+        el('div', 'metric-value', value),
+        el('div', 'metric-label', label)
+    );
+}
+
+function scenarioItem(label, value) {
+    return el('div', 'scenario-item',
+        el('span', 'scenario-label', label),
+        el('span', 'scenario-value', value)
+    );
+}
+
+function buildCapacityMessage(overCapacityPercent) {
+    const isHigh = overCapacityPercent > 20;
+    const isMod = overCapacityPercent > 5;
+    const strong = document.createElement('strong');
+    let suffix;
+    if (isHigh) {
+        strong.textContent = '⚠️ Capacity Risk:';
+        suffix = ` ${overCapacityPercent}% chance of exceeding available hours. Consider reducing scope or increasing capacity.`;
+    } else if (isMod) {
+        strong.textContent = '⚠️ Moderate Risk:';
+        suffix = ` ${overCapacityPercent}% chance of exceeding available hours. Monitor closely and have contingency plans.`;
+    } else {
+        strong.textContent = '✅ Good Capacity:';
+        suffix = ` Only ${overCapacityPercent}% chance of exceeding available hours. Reasonable buffer for unexpected work.`;
+    }
+    return el('div', isHigh || isMod ? 'capacity-warning' : 'capacity-good', strong, suffix);
+}
+
 function displayResults(data) {
     const resultsDiv = document.getElementById('results');
 
-    let capacityMessage = '';
-    if (data.overCapacityPercent > 20) {
-        capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Capacity Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
-                    Consider reducing scope or increasing capacity.
-                </div>`;
-    } else if (data.overCapacityPercent > 5) {
-        capacityMessage = `<div class="capacity-warning">
-                    <strong>⚠️ Moderate Risk:</strong> ${data.overCapacityPercent}% chance of exceeding available hours.
-                    Monitor closely and have contingency plans.
-                </div>`;
-    } else {
-        capacityMessage = `<div class="capacity-good">
-                    <strong>✅ Good Capacity:</strong> Only ${data.overCapacityPercent}% chance of exceeding available hours.
-                    Reasonable buffer for unexpected work.
-                </div>`;
-    }
+    const riskLevel = data.overCapacityPercent > 20 ? 'high' : data.overCapacityPercent > 5 ? 'medium' : 'low';
+    const riskLabel = data.overCapacityPercent > 20 ? 'High' : data.overCapacityPercent > 5 ? 'Moderate' : 'Low';
+    const avgWeeklyHours = (data.workloadData.totalHours / data.workloadData.maxWeek).toFixed(1);
+    const peakHours = Math.max(...data.workloadData.weeklyHours).toFixed(1);
 
-    resultsDiv.innerHTML = `
-                <div class="results">
-                    <h3>Simulation Results</h3>
+    const effortCanvas = document.createElement('canvas');
+    effortCanvas.id = 'effortChart';
+    const timelineCanvas = document.createElement('canvas');
+    timelineCanvas.id = 'timelineChart';
+    const workloadCanvas = document.createElement('canvas');
+    workloadCanvas.id = 'workloadChart';
 
-                    <h4>Effort Analysis (person-hours)</h4>
-                    <div class="results-grid">
-                        <div class="metric">
-                            <div class="metric-value">${data.effort.mean}</div>
-                            <div class="metric-label">Mean Effort (hrs)</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.effort.p50}</div>
-                            <div class="metric-label">Median (P50) hrs</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.effort.confidenceValue}</div>
-                            <div class="metric-label">${data.confidence}% Confidence (hrs)</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.effort.p90}</div>
-                            <div class="metric-label">P90 (Worst Case) hrs</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.capacity}</div>
-                            <div class="metric-label">Available Capacity (hrs)</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.overCapacityPercent}%</div>
-                            <div class="metric-label">Over Capacity Risk</div>
-                        </div>
-                    </div>
-                    ${capacityMessage}
+    const workloadHeading = document.createElement('h4');
+    workloadHeading.textContent = `Weekly Workload (${data.confidence}% Confidence Case - ${data.workloadData.simulationCount} simulations)`;
 
-                    <h4>Timeline Analysis (days)</h4>
-                    <div class="results-grid">
-                        <div class="metric">
-                            <div class="metric-value">${data.timeline.mean}</div>
-                            <div class="metric-label">Mean Timeline</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.timeline.p50}</div>
-                            <div class="metric-label">Median (P50)</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.timeline.confidenceValue}</div>
-                            <div class="metric-label">${data.confidence}% Confidence</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${data.timeline.p90}</div>
-                            <div class="metric-label">P90 (Worst Case)</div>
-                        </div>
-                    </div>
+    const riskValueSpan = el('span', `scenario-value risk-${riskLevel}`,
+        `${riskLabel} (${data.overCapacityPercent}% chance of exceeding capacity)`
+    );
 
-                    <div class="distribution-chart">
-                        <canvas id="effortChart"></canvas>
-                    </div>
+    const container = el('div', 'results',
+        el('h3', null, 'Simulation Results'),
+        el('h4', null, 'Effort Analysis (person-hours)'),
+        el('div', 'results-grid',
+            metric(data.effort.mean, 'Mean Effort (hrs)'),
+            metric(data.effort.p50, 'Median (P50) hrs'),
+            metric(data.effort.confidenceValue, `${data.confidence}% Confidence (hrs)`),
+            metric(data.effort.p90, 'P90 (Worst Case) hrs'),
+            metric(String(data.capacity), 'Available Capacity (hrs)'),
+            metric(`${data.overCapacityPercent}%`, 'Over Capacity Risk')
+        ),
+        buildCapacityMessage(data.overCapacityPercent),
+        el('h4', null, 'Timeline Analysis (days)'),
+        el('div', 'results-grid',
+            metric(data.timeline.mean, 'Mean Timeline'),
+            metric(data.timeline.p50, 'Median (P50)'),
+            metric(data.timeline.confidenceValue, `${data.confidence}% Confidence`),
+            metric(data.timeline.p90, 'P90 (Worst Case)')
+        ),
+        el('div', 'distribution-chart', effortCanvas),
+        el('div', 'distribution-chart', timelineCanvas),
+        workloadHeading,
+        el('div', 'distribution-chart', workloadCanvas),
+        el('div', 'executive-summary',
+            el('h3', null, 'Executive Summary'),
+            el('div', 'summary-grid',
+                el('div', 'summary-card',
+                    el('h4', null, 'Planning Scenarios'),
+                    scenarioItem('Most Likely Outcome:', `${data.effort.p50} hours over ${data.timeline.p50} business days`),
+                    scenarioItem('Conservative Planning:', `${data.effort.confidenceValue} hours over ${data.timeline.confidenceValue} business days`),
+                    scenarioItem('Contingency Planning:', `${data.effort.p90} hours over ${data.timeline.p90} business days`)
+                ),
+                el('div', 'summary-card',
+                    el('h4', null, 'Resource Requirements'),
+                    scenarioItem('Expected Weekly Capacity:', `${avgWeeklyHours} hours/week`),
+                    scenarioItem('Peak Weekly Demand:', `${peakHours} hours`),
+                    el('div', 'scenario-item',
+                        el('span', 'scenario-label', 'Capacity Risk Level:'),
+                        riskValueSpan
+                    )
+                )
+            )
+        )
+    );
 
-                    <div class="distribution-chart">
-                        <canvas id="timelineChart"></canvas>
-                    </div>
-
-                    <h4>Weekly Workload (${data.confidence}% Confidence Case - ${data.workloadData.simulationCount} simulations)</h4>
-                    <div class="distribution-chart">
-                        <canvas id="workloadChart"></canvas>
-                    </div>
-
-                    <div class="executive-summary">
-                        <h3>Executive Summary</h3>
-                        <div class="summary-grid">
-                            <div class="summary-card">
-                                <h4>Planning Scenarios</h4>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Most Likely Outcome:</span>
-                                    <span class="scenario-value">${data.effort.p50} hours over ${data.timeline.p50} business days</span>
-                                </div>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Conservative Planning:</span>
-                                    <span class="scenario-value">${data.effort.confidenceValue} hours over ${data.timeline.confidenceValue} business days</span>
-                                </div>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Contingency Planning:</span>
-                                    <span class="scenario-value">${data.effort.p90} hours over ${data.timeline.p90} business days</span>
-                                </div>
-                            </div>
-
-                            <div class="summary-card">
-                                <h4>Resource Requirements</h4>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Expected Weekly Capacity:</span>
-                                    <span class="scenario-value">${(data.workloadData.totalHours / data.workloadData.maxWeek).toFixed(1)} hours/week</span>
-                                </div>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Peak Weekly Demand:</span>
-                                    <span class="scenario-value">${Math.max(...data.workloadData.weeklyHours).toFixed(1)} hours</span>
-                                </div>
-                                <div class="scenario-item">
-                                    <span class="scenario-label">Capacity Risk Level:</span>
-                                    <span class="scenario-value risk-${data.overCapacityPercent > 20 ? 'high' : data.overCapacityPercent > 5 ? 'medium' : 'low'}">
-                                        ${data.overCapacityPercent > 20 ? 'High' : data.overCapacityPercent > 5 ? 'Moderate' : 'Low'} (${data.overCapacityPercent}% chance of exceeding capacity)
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
+    resultsDiv.replaceChildren(container);
     resultsDiv.style.display = 'block';
     createCharts(data.effortResults, data.timelineResults, data.capacity, data.workloadData);
 }
