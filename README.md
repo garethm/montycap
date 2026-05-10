@@ -118,7 +118,7 @@ MIT License - see LICENSE file for details
 1. Fork the repository and clone your fork
 2. Create a branch: `git checkout -b <type>/<short-description>` (types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
 3. Install dependencies: `npm install --ignore-scripts`
-4. Install pre-commit hooks: `pip install pre-commit && pre-commit install`
+4. Install pre-commit hooks: `pipx install pre-commit && pre-commit install` (or `pip install pre-commit && pre-commit install`)
 5. Edit source files in `src/` — do not edit `web/index.html` directly
 6. Run tests: `npm test`
 7. Build: `npm run build`
