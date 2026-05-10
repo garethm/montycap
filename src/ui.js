@@ -546,13 +546,14 @@ function loadFromFile() {
 }
 
 export function parseCSV(data) {
-    const lines = data.trim().split('\n');
+    const result = Papa.parse(data, { header: true, skipEmptyLines: true });
 
     document.getElementById('tasks').innerHTML = '';
 
-    for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        if (values.length >= 8) {
+    const headers = result.meta.fields;
+    for (const row of result.data) {
+        const values = headers.map(h => row[h] ?? '');
+        if (values.length >= 8 && values[0]) {
             addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
         }
     }
@@ -592,6 +593,12 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
     tasksDiv.appendChild(taskDiv);
 }
 
+const CSV_EXPORT_HEADERS = ['Task Name', 'Skip %', 'Work Optimistic (hrs)', 'Work Expected (hrs)', 'Work Pessimistic (hrs)', 'Wait Optimistic (days)', 'Wait Expected (days)', 'Wait Pessimistic (days)'];
+
+export function buildCSV(tasks) {
+    return Papa.unparse({ fields: CSV_EXPORT_HEADERS, data: tasks }, { newline: '\r\n' });
+}
+
 function exportToFile() {
     const tasks = [];
     document.querySelectorAll('.task-input').forEach(taskDiv => {
@@ -610,10 +617,7 @@ function exportToFile() {
         }
     });
 
-    let csvContent = 'Task Name,Skip %,Work Optimistic (hrs),Work Expected (hrs),Work Pessimistic (hrs),Wait Optimistic (days),Wait Expected (days),Wait Pessimistic (days)\n';
-    tasks.forEach(task => {
-        csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
-    });
+    const csvContent = buildCSV(tasks);
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
