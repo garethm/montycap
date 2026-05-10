@@ -215,7 +215,6 @@ export function scheduleWorkItem(item, weeklyUsage, weeklyCapacity, hoursPerDay)
     }
 
     if (attempts >= maxAttempts) {
-        console.warn(`Task '${item.task}' could not be scheduled within capacity constraints: requires ${item.hours} hours. Forcing schedule.`);
         allocateCapacity(startDay, workDays, item.hours, weeklyUsage);
     }
 
@@ -286,19 +285,10 @@ export function findConfidenceRangeSimulations(simulationData, confidenceTimelin
     const endIndex = Math.min(simulationData.length - 1, startIndex + rangeSize - 1);
     const rangeSimulations = simulationData.slice(startIndex, endIndex + 1);
 
-    console.log('Confidence Range:', {
-        targetIndex: confidenceIndex,
-        rangeStart: startIndex,
-        rangeEnd: endIndex,
-        simulationsUsed: rangeSimulations.length,
-        timelineRange: `${rangeSimulations[0]?.timeline.toFixed(1)} - ${rangeSimulations[rangeSimulations.length-1]?.timeline.toFixed(1)} days`,
-        effortRange: `${Math.min(...rangeSimulations.map(s => s.effort)).toFixed(1)} - ${Math.max(...rangeSimulations.map(s => s.effort)).toFixed(1)} hours`
-    });
-
     return rangeSimulations;
 }
 
-export function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity, debugInfo) {
+export function calculateAggregatedWorkloadDistribution(confidenceSimulations, confidence, weeklyCapacity) {
     if (!confidenceSimulations || confidenceSimulations.length === 0) {
         return { weeklyHours: [], maxWeek: 0, weeklyCapacity: weeklyCapacity, simulationCount: 0 };
     }
@@ -325,11 +315,6 @@ export function calculateAggregatedWorkloadDistribution(confidenceSimulations, c
     );
 
     const totalWorkloadHours = weeklyHours.reduce((sum, hours) => sum + hours, 0);
-    console.log('Workload Total Check:', {
-        weeklyHoursSum: totalWorkloadHours.toFixed(1),
-        targetEffort: debugInfo.averageEffort,
-        difference: (totalWorkloadHours - parseFloat(debugInfo.averageEffort)).toFixed(1)
-    });
 
     return {
         weeklyHours: weeklyHours,
