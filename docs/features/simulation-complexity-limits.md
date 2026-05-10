@@ -100,6 +100,7 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 - Error messages appear inline adjacent to the relevant input, not in alert dialogs
 - The complexity budget warning is an inline banner, not a blocking dialog — the user can proceed
 - Rejection (not clamping) is the model for hard limits: the run does not start until the user corrects the value
+- CSV imports with more than 100 valid task rows are rejected entirely with an error message; the existing task list is left unchanged so the user does not lose their current work
 
 ## Testing
 
@@ -107,7 +108,9 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 
 - simulations set to 25,001: Run button disabled, error shown
 - programQuantity set to 101: Run button disabled, error shown
-- 101st task added: Add Task button disabled, limit message shown
+- 101st task added via UI: Add Task button disabled, limit message shown
+- CSV imported with > 100 valid task rows: import rejected with an error message, existing tasks unchanged
+- CSV imported with ≤ 100 tasks: loads normally, no warning
 - All inputs at their maximums (25,000 × 100 × 100 = 250M ops): budget warning shown, Run still available
 - simulations = 1,000, programQuantity = 5, tasks = 3 (15,000 ops): no warning, runs normally
 - HTML `max` attribute removed via DevTools, value set above limit: JavaScript validation still blocks run
@@ -117,10 +120,13 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 
 1. Set simulations to 25,001 — confirm Run is disabled and error is visible
 2. Correct to 25,000 — confirm Run re-enables and error clears
-3. Add tasks until the 100th — confirm Add Task disables and message appears
-4. Set simulations = 25,000, programQuantity = 10, tasks = 20 (5M ops) — click Run, confirm budget warning appears without blocking
-5. Click Run again (or "Run anyway") — confirm simulation starts and progress bar appears
-6. Via browser DevTools, remove the `max` attribute from the simulations input, enter 100,000, click Run — confirm JavaScript validation catches it
+3. Set programQuantity to 101 — confirm Run is disabled and error is visible
+4. Correct to 100 — confirm Run re-enables and error clears
+5. Add tasks until the 100th — confirm Add Task disables and message appears
+6. Import a CSV with more than 100 valid task rows — confirm the import is rejected with an error message and the existing task list is unchanged
+7. Set simulations = 25,000, programQuantity = 10, tasks = 20 (5M ops) — click Run, confirm budget warning appears without blocking
+8. Click "Run anyway" — confirm simulation starts and progress bar appears
+9. Via browser DevTools, remove the `max` attribute from the simulations input, enter 100,000, click Run — confirm JavaScript validation catches it
 
 ## Performance Considerations
 

@@ -627,14 +627,21 @@ function loadFromFile() {
 export function parseCSV(data) {
     const result = Papa.parse(data, { header: true, skipEmptyLines: true });
 
-    document.getElementById('tasks').innerHTML = '';
-
     const headers = result.meta.fields;
-    for (const row of result.data) {
+    const validRows = result.data.filter(row => {
         const values = headers.map(h => row[h] ?? '');
-        if (values.length >= 8 && values[0]) {
-            addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
-        }
+        return values.length >= 8 && values[0];
+    });
+
+    if (validRows.length > MAX_TASKS) {
+        alert(`This file contains ${validRows.length} tasks, which exceeds the limit of ${MAX_TASKS}. Please reduce the number of tasks in the file and try again.`);
+        return;
+    }
+
+    document.getElementById('tasks').innerHTML = '';
+    for (const row of validRows) {
+        const values = headers.map(h => row[h] ?? '');
+        addTaskFromData(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
     }
 }
 
