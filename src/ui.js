@@ -593,6 +593,16 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
     tasksDiv.appendChild(taskDiv);
 }
 
+const CSV_EXPORT_HEADERS = ['Task Name', 'Skip %', 'Work Optimistic (hrs)', 'Work Expected (hrs)', 'Work Pessimistic (hrs)', 'Wait Optimistic (days)', 'Wait Expected (days)', 'Wait Pessimistic (days)'];
+
+export function buildCSV(tasks) {
+    let csv = CSV_EXPORT_HEADERS.join(',') + '\n';
+    tasks.forEach(task => {
+        csv += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
+    });
+    return csv;
+}
+
 function exportToFile() {
     const tasks = [];
     document.querySelectorAll('.task-input').forEach(taskDiv => {
@@ -611,10 +621,7 @@ function exportToFile() {
         }
     });
 
-    let csvContent = 'Task Name,Skip %,Work Optimistic (hrs),Work Expected (hrs),Work Pessimistic (hrs),Wait Optimistic (days),Wait Expected (days),Wait Pessimistic (days)\n';
-    tasks.forEach(task => {
-        csvContent += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
-    });
+    const csvContent = buildCSV(tasks);
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
