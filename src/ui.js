@@ -545,7 +545,7 @@ function loadFromFile() {
     }
 }
 
-function parseCSV(data) {
+export function parseCSV(data) {
     const lines = data.trim().split('\n');
 
     document.getElementById('tasks').innerHTML = '';
@@ -558,7 +558,7 @@ function parseCSV(data) {
     }
 }
 
-function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess) {
+export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess, waitOpt, waitExp, waitPess) {
     const tasksDiv = document.getElementById('tasks');
     const taskDiv = document.createElement('div');
     taskDiv.className = 'task-input';
