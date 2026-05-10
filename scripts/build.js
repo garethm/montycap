@@ -22,9 +22,14 @@ let output = template.replace('/* @@BUILD_JS@@ */', js);
 const scriptContent = '\n' + js + '\n    ';
 const scriptHash = crypto.createHash('sha256').update(scriptContent, 'utf8').digest('base64');
 
+// Extract SRI hashes from external <script integrity="..."> tags so the CSP
+// pins exact file content rather than allowing the whole CDN host.
+const externalScriptHashes = [...template.matchAll(/<script[^>]+integrity="([^"]+)"/g)]
+    .map(m => `'${m[1]}'`);
+
 const csp = [
     "default-src 'none'",
-    `script-src 'sha256-${scriptHash}' https://cdnjs.cloudflare.com`,
+    `script-src 'sha256-${scriptHash}' ${externalScriptHashes.join(' ')}`,
     "style-src 'unsafe-inline'",
     "img-src data: blob:",
     "base-uri 'none'",
