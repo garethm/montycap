@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const root = path.join(__dirname, '..');
 const template = fs.readFileSync(path.join(root, 'src/template.html'), 'utf8');
@@ -15,7 +16,22 @@ function stripModuleSyntax(code) {
 }
 
 const js = stripModuleSyntax(simulation) + '\n' + stripModuleSyntax(ui);
-const output = template.replace('/* @@BUILD_JS@@ */', js);
+let output = template.replace('/* @@BUILD_JS@@ */', js);
+
+// Hash the inline script content (text between <script> and </script> after substitution)
+const scriptContent = '\n' + js + '\n    ';
+const scriptHash = crypto.createHash('sha256').update(scriptContent, 'utf8').digest('base64');
+
+const csp = [
+    "default-src 'none'",
+    `script-src 'sha256-${scriptHash}' https://cdnjs.cloudflare.com`,
+    "style-src 'unsafe-inline'",
+    "img-src data: blob:",
+    "base-uri 'none'",
+    "form-action 'none'",
+].join('; ');
+
+output = output.replace('<!-- @@CSP@@ -->', `<meta http-equiv="Content-Security-Policy" content="${csp}">`);
 
 const outputPath = path.join(root, 'web/index.html');
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
