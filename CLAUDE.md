@@ -91,8 +91,11 @@ Runs property-based tests in `test/` using vitest and fast-check.
 - **File Format**: CSV with columns: Task Name, Quantity, Skip %, Optimistic, Expected, Pessimistic
 
 ### Dependencies
-- **Chart.js**: External CDN library for data visualization
+- **Chart.js**: CDN library for data visualization
+- **PapaParse**: CDN library for CSV parsing and serialisation
 - **Browser APIs**: FileReader for CSV processing, Canvas for charts
+
+External dependencies are loaded via CDN rather than bundled, to keep the output a single self-contained HTML file.
 
 ### Key Features
 - Real-time Monte Carlo simulation with configurable parameters
@@ -105,7 +108,7 @@ Runs property-based tests in `test/` using vitest and fast-check.
 ## Development Notes
 
 ### Code Style
-- Vanilla JavaScript (ES6+) with no framework dependencies
+- Vanilla JavaScript (ES6+) — no bundled dependencies; external libraries loaded via CDN
 - Inline CSS using CSS Grid and Flexbox for responsive design
 - Functional programming approach for statistical calculations
 - Event-driven UI updates
@@ -113,7 +116,7 @@ Runs property-based tests in `test/` using vitest and fast-check.
 ### Browser Compatibility
 - Requires modern browser supporting ES6+, HTML5 File API, and Canvas
 - No server-side components or build process required
-- Self-contained with external CDN dependency only for Chart.js
+- Self-contained single HTML file; Chart.js and PapaParse loaded via CDN
 
 ### Statistical Implementation
 - Uses proper PERT distribution with Beta parameters
