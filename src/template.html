@@ -275,6 +275,12 @@
             display: none;
             font-size: 0.9em;
         }
+        .task-limit-message {
+            display: none;
+            margin-left: 10px;
+            font-size: 0.85em;
+            color: #666;
+        }
         .complexity-warning button {
             margin-left: 12px;
             padding: 4px 12px;
@@ -375,7 +381,7 @@
                 </div>
             </div>
             <button type="button" class="btn btn-secondary" id="addTaskBtn" onclick="addTask()">Add Task</button>
-            <span id="taskLimitMessage" style="display:none; margin-left:10px; font-size:0.85em; color:#666;">Maximum of 100 tasks reached</span>
+            <span id="taskLimitMessage" class="task-limit-message">Maximum of 100 tasks reached</span>
         </div>
 
         <div class="button-container">
