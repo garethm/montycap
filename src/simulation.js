@@ -38,7 +38,7 @@ export function gammaRandom(shape) {
 
 export function normalRandom() {
     // Box-Muller transform
-    const u = Math.random();
+    const u = Math.random() || Number.MIN_VALUE;
     const v = Math.random();
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
