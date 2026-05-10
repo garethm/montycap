@@ -101,13 +101,13 @@ const SIMPLE_TASK = ['My task', '10', '1', '2', '3', '0.5', '1', '2'];
 
 describe('buildCSV', () => {
     it('first row is the header', () => {
-        const rows = buildCSV([]).split('\n');
+        const rows = buildCSV([]).split('\r\n');
         expect(rows[0]).toBe(EXPORT_HEADERS);
     });
 
     it('produces one data row per task', () => {
         const csv = buildCSV([SIMPLE_TASK, SIMPLE_TASK]);
-        const rows = csv.trim().split('\n');
+        const rows = csv.split('\r\n').filter(r => r.length > 0);
         expect(rows).toHaveLength(3); // header + 2 data rows
     });
 

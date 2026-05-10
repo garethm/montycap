@@ -596,11 +596,7 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
 const CSV_EXPORT_HEADERS = ['Task Name', 'Skip %', 'Work Optimistic (hrs)', 'Work Expected (hrs)', 'Work Pessimistic (hrs)', 'Wait Optimistic (days)', 'Wait Expected (days)', 'Wait Pessimistic (days)'];
 
 export function buildCSV(tasks) {
-    let csv = CSV_EXPORT_HEADERS.join(',') + '\n';
-    tasks.forEach(task => {
-        csv += `"${task[0]}",${task[1]},${task[2]},${task[3]},${task[4]},${task[5]},${task[6]},${task[7]}\n`;
-    });
-    return csv;
+    return Papa.unparse({ fields: CSV_EXPORT_HEADERS, data: tasks }, { newline: '\r\n' });
 }
 
 function exportToFile() {
