@@ -126,14 +126,16 @@ function validateInputLimits() {
 }
 
 async function runSimulation() {
+    const bypassBudget = skipBudgetCheck;
+    skipBudgetCheck = false;
+
     if (!validateInputLimits()) return;
 
     const ops = getComplexityOps();
-    if (!skipBudgetCheck && ops > COMPLEXITY_BUDGET) {
+    if (!bypassBudget && ops > COMPLEXITY_BUDGET) {
         showComplexityWarning(ops);
         return;
     }
-    skipBudgetCheck = false;
     hideComplexityWarning();
 
     const runButton = document.getElementById('runButton');
