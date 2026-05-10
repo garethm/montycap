@@ -5,8 +5,14 @@ let effortChart = null;
 let timelineChart = null;
 let workloadChart = null;
 
+const MAX_TASKS = 100;
+const MAX_SIMULATIONS = 25000;
+const MAX_PROGRAM_QUANTITY = 100;
+const COMPLEXITY_BUDGET = 5000000;
+
 function addTask() {
     const tasksDiv = document.getElementById('tasks');
+    if (tasksDiv.querySelectorAll('.task-input').length >= MAX_TASKS) return;
     const taskDiv = document.createElement('div');
     taskDiv.className = 'task-input';
     taskDiv.innerHTML = `
@@ -21,10 +27,21 @@ function addTask() {
                 <button class="remove-btn" onclick="removeTask(this)">Remove</button>
             `;
     tasksDiv.appendChild(taskDiv);
+    updateTaskLimitUI();
 }
 
 function removeTask(button) {
     button.parentElement.remove();
+    updateTaskLimitUI();
+}
+
+function updateTaskLimitUI() {
+    const tasksDiv = document.getElementById('tasks');
+    const atLimit = tasksDiv.querySelectorAll('.task-input').length >= MAX_TASKS;
+    const btn = document.getElementById('addTaskBtn');
+    const msg = document.getElementById('taskLimitMessage');
+    if (btn) btn.disabled = atLimit;
+    if (msg) msg.style.display = atLimit ? 'inline' : 'none';
 }
 
 function updateProgress(percentage) {
@@ -37,7 +54,64 @@ function updateProgress(percentage) {
     }
 }
 
+let skipBudgetCheck = false;
+
+function getComplexityOps() {
+    const simulations = parseInt(document.getElementById('simulations').value) || 0;
+    const programQuantity = parseInt(document.getElementById('programQuantity').value) || 0;
+    const taskCount = document.querySelectorAll('.task-input').length;
+    return simulations * programQuantity * taskCount;
+}
+
+function showComplexityWarning(ops) {
+    const warning = document.getElementById('complexityWarning');
+    if (!warning) return;
+    const opsM = (ops / 1000000).toFixed(1);
+    warning.innerHTML = `This configuration (~${opsM}M operations) may take a long time. Reduce simulation runs, program quantity, or tasks — or <button onclick="runAnyway()">Run anyway</button>`;
+    warning.style.display = 'block';
+}
+
+function hideComplexityWarning() {
+    const warning = document.getElementById('complexityWarning');
+    if (warning) warning.style.display = 'none';
+}
+
+function runAnyway() {
+    skipBudgetCheck = true;
+    runSimulation();
+}
+
+function validateInputLimits() {
+    const checks = [
+        { id: 'simulations', max: MAX_SIMULATIONS, errorId: 'simulationsError' },
+        { id: 'programQuantity', max: MAX_PROGRAM_QUANTITY, errorId: 'programQuantityError' },
+    ];
+    let valid = true;
+    for (const { id, max, errorId } of checks) {
+        const input = document.getElementById(id);
+        const errSpan = document.getElementById(errorId);
+        const value = parseInt(input.value);
+        const over = value > max;
+        input.classList.toggle('input-error', over);
+        if (errSpan) errSpan.style.display = over ? 'block' : 'none';
+        if (over) valid = false;
+    }
+    const runButton = document.getElementById('runButton');
+    if (runButton) runButton.disabled = !valid;
+    return valid;
+}
+
 async function runSimulation() {
+    if (!validateInputLimits()) return;
+
+    const ops = getComplexityOps();
+    if (!skipBudgetCheck && ops > COMPLEXITY_BUDGET) {
+        showComplexityWarning(ops);
+        return;
+    }
+    skipBudgetCheck = false;
+    hideComplexityWarning();
+
     const runButton = document.getElementById('runButton');
     const progressContainer = document.getElementById('progressContainer');
 
@@ -51,7 +125,7 @@ async function runSimulation() {
         console.error('Simulation error:', error);
         alert('Simulation encountered an error. Please try again.');
     } finally {
-        runButton.disabled = false;
+        runButton.disabled = !validateInputLimits();
         runButton.textContent = 'Run Timeline & Capacity Simulation';
         progressContainer.style.display = 'none';
     }
@@ -86,6 +160,11 @@ async function runSimulationAsync() {
             });
         }
     });
+
+    if (simulations > MAX_SIMULATIONS || programQuantity > MAX_PROGRAM_QUANTITY) {
+        alert('Simulation parameters exceed allowed limits. Please correct the highlighted fields.');
+        return;
+    }
 
     if (tasks.length === 0) {
         alert('Please add at least one task');
@@ -591,6 +670,7 @@ export function addTaskFromData(name, skipPercentage, workOpt, workExp, workPess
     taskDiv.appendChild(button);
 
     tasksDiv.appendChild(taskDiv);
+    updateTaskLimitUI();
 }
 
 const CSV_EXPORT_HEADERS = ['Task Name', 'Skip %', 'Work Optimistic (hrs)', 'Work Expected (hrs)', 'Work Pessimistic (hrs)', 'Wait Optimistic (days)', 'Wait Expected (days)', 'Wait Pessimistic (days)'];
@@ -631,5 +711,7 @@ function exportToFile() {
 }
 
 window.addEventListener('load', function() {
+    document.getElementById('simulations').addEventListener('input', validateInputLimits);
+    document.getElementById('programQuantity').addEventListener('input', validateInputLimits);
     setTimeout(runSimulation, 500);
 });
