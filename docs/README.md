@@ -4,13 +4,17 @@ This directory contains comprehensive documentation for the Monte Carlo Capacity
 
 ## Quick Navigation
 
+**New to this project? Start with [Foundation](foundation.md)** — it explains the planning problem the tool addresses and the reasoning behind the model.
+
 ### For Users
 
+- **[Foundation](foundation.md)**: The conceptual model — why the tool works the way it does
 - **[Main README](../README.md)**: Getting started and basic usage
 - **[Security Policy](development/SECURITY.md)**: Security considerations and vulnerability reporting
 
 ### For Contributors
 
+- **[Foundation](foundation.md)**: Start here to understand the design intent
 - **[Contributing Guide](development/CONTRIBUTING.md)**: How to contribute to this project
 - **[Security Policy](development/SECURITY.md)**: Security considerations for development
 
@@ -24,6 +28,7 @@ This directory contains comprehensive documentation for the Monte Carlo Capacity
 ```text
 docs/
 ├── README.md                    # This navigation file
+├── foundation.md                # Start here: the planning problem and conceptual model
 ├── adr/                         # Architecture Decision Records
 │   └── template.md             # ADR template for new decisions
 ├── features/                    # Feature-specific documentation
