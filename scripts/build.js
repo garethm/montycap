@@ -8,6 +8,7 @@ const root = path.join(__dirname, '..');
 const template = fs.readFileSync(path.join(root, 'src/template.html'), 'utf8');
 const simulation = fs.readFileSync(path.join(root, 'src/simulation.js'), 'utf8');
 const ui = fs.readFileSync(path.join(root, 'src/ui.js'), 'utf8');
+const styles = fs.readFileSync(path.join(root, 'src/styles.css'), 'utf8');
 
 function stripModuleSyntax(code) {
     return code
@@ -16,7 +17,18 @@ function stripModuleSyntax(code) {
 }
 
 const js = stripModuleSyntax(simulation) + '\n' + stripModuleSyntax(ui);
-let output = template.replace('/* @@BUILD_JS@@ */', js);
+
+// Inject CSS and JS into their respective placeholders.
+// The template already has \n before and \n    after each placeholder, so replace
+// with raw content only — matching how JS injection works.
+const css = styles.trimEnd();
+let output = template
+    .replace('/* @@BUILD_CSS@@ */', css)
+    .replace('/* @@BUILD_JS@@ */', js);
+
+// Hash inline style block: the template contributes \n before and \n    after the placeholder,
+// so the full content between <style> and </style> is '\n' + css + '\n    '.
+const styleHash = crypto.createHash('sha256').update('\n' + css + '\n    ', 'utf8').digest('base64');
 
 // Hash the inline script content (text between <script> and </script> after substitution)
 const scriptContent = '\n' + js + '\n    ';
@@ -30,7 +42,7 @@ const externalScriptHashes = [...template.matchAll(/<script[^>]+integrity="([^"]
 const csp = [
     "default-src 'none'",
     `script-src 'sha256-${scriptHash}' ${externalScriptHashes.join(' ')}`,
-    "style-src 'unsafe-inline'",
+    `style-src 'sha256-${styleHash}'`,
     "img-src data: blob:",
     "base-uri 'none'",
     "form-action 'none'",
