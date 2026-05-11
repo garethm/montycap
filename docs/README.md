@@ -24,14 +24,18 @@ This directory contains comprehensive documentation for the Monte Carlo Capacity
 ```text
 docs/
 ├── README.md                    # This navigation file
-├── adr/                        # Architecture Decision Records
-│   ├── template.md            # ADR template for new decisions
-│   └── 0001-repository-structure.md
-├── features/                   # Feature-specific documentation
-│   └── template.md            # Template for documenting features
-└── development/               # Development and maintenance docs
-    ├── CONTRIBUTING.md        # Contribution guidelines
-    └── SECURITY.md           # Security policy and procedures
+├── adr/                         # Architecture Decision Records
+│   └── template.md             # ADR template for new decisions
+├── features/                    # Feature-specific documentation
+│   ├── template.md             # Template for documenting features
+│   ├── 01-configure/           # Input definition: tasks and simulation parameters
+│   ├── 02-simulate/            # Simulation computation and guards
+│   ├── 03-report/              # Results display and visualisation
+│   ├── 04-exchange/            # CSV import and export
+│   └── 90-testing/             # Cross-cutting quality and verification concerns
+└── development/                 # Development and maintenance docs
+    ├── CONTRIBUTING.md         # Contribution guidelines
+    └── SECURITY.md             # Security policy and procedures
 ```
 
 ## Documentation Standards
