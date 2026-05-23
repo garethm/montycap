@@ -158,5 +158,5 @@ See `test/simulation.test.js` for the full list. Key cases:
 
 ## Related Documentation
 
-- [ADR-0001](../../adr/0001-repository-structure.md)
+- [Repository layout](../../adr/structure/repository-layout.md)
 - [Security Policy](../../development/SECURITY.md)
