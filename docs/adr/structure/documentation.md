@@ -58,7 +58,7 @@ Feature documentation is organised by workflow phase. The numbered prefix establ
 
 ## References
 
-- [foundation.md](../foundation.md)
+- [foundation.md](../../foundation.md)
 
 ## History
 
