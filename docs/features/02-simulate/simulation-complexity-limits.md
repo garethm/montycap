@@ -146,7 +146,3 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 
 - Move simulation loop to a Web Worker to keep the UI fully responsive during long runs
 - Adaptive budget estimate based on a short benchmark run on the user's device
-
-## Related Documentation
-
-- [Template](./template.md)

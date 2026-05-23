@@ -1,5 +1,27 @@
 # Feature: [Feature Name]
 
+<!--
+FRAMING GUIDE
+
+These documents are specifications, not retrospective documentation. Write them
+as forward-looking declarations of what the feature must do, not descriptions of
+what the current implementation does.
+
+Language:
+- Use "must" for requirements: "Task names must be passed through sanitisation before export"
+- Use declarative present tense for facts about the model: "Each task row contains nine elements"
+- Avoid "is/are/does" when describing implementation behaviour — that framing documents the past
+- Do not reference function names, variable names, or line numbers unless this is a
+  technical feature (testing infrastructure, build tooling, security controls). For
+  user-facing features, describe behaviour and intent.
+
+Implementation Details section:
+- Include it only for technical features (e.g. property-based tests, build pipeline,
+  security tooling) where knowing the code structure is part of the specification
+- Omit it for user-facing features — the feature documents what the product must do,
+  not how it must be built
+-->
+
 ## Overview
 
 Brief description of what this feature does and why it exists.
@@ -12,17 +34,17 @@ As a [user type], I want [functionality] so that [benefit/goal].
 
 ### Core Features
 
-- Feature point 1
-- Feature point 2
-- Feature point 3
+- Feature requirement 1
+- Feature requirement 2
+- Feature requirement 3
 
 ### User Interface
 
-Describe the UI elements and user interactions for this feature.
+Describe the UI elements and interactions this feature requires.
 
 ### Data Flow
 
-Explain how data moves through the system for this feature.
+Explain how data must move through the system for this feature.
 
 ## Security Considerations
 
@@ -50,9 +72,8 @@ Explain how data moves through the system for this feature.
 
 ### Threat Model
 
-- **Threat 1**: [Description] → Mitigation: [How it's addressed]
-- **Threat 2**: [Description] → Mitigation: [How it's addressed]
-- **Threat 3**: [Description] → Mitigation: [How it's addressed]
+- **Threat 1**: [Description] → Mitigation: [How it must be addressed]
+- **Threat 2**: [Description] → Mitigation: [How it must be addressed]
 
 Common threats to consider:
 - **Data injection**: Malicious data in CSV files, user inputs
@@ -65,12 +86,15 @@ Common threats to consider:
 
 ### Security Controls
 
-- Input validation mechanisms
-- Output encoding/escaping
+- Input validation requirements
+- Output encoding/escaping requirements
 - Content Security Policy considerations
-- Safe defaults and fail-secure behaviors
-- Data sanitization for outbound flows
-- Secure data storage practices
+- Safe defaults and fail-secure behaviours
+- Data sanitisation for outbound flows
+
+<!--
+IMPLEMENTATION DETAILS — include this section only for technical features.
+Remove it for user-facing features.
 
 ## Implementation Details
 
@@ -81,17 +105,18 @@ Common threats to consider:
 
 ### Code Location
 
-- Primary implementation: `web/index.html` lines XXX-YYY
-- Related functions: `functionName()`, `anotherFunction()`
+- Primary implementation: `src/` — describe the relevant file and area
+- Related files: list other files involved
 
 ### Dependencies
 
 - External libraries used
 - Internal components depended upon
+-->
 
 ## Configuration
 
-Any configuration options or parameters that affect this feature.
+Any named constants or configuration values that govern this feature's behaviour.
 
 ## Usage Examples
 
@@ -104,14 +129,14 @@ Step-by-step example of basic usage
 ### Advanced Usage
 
 ```text
-Example of more complex usage scenarios
+Example of a more complex usage scenario
 ```
 
 ## Validation & Error Handling
 
 - Input validation rules
-- Error conditions and handling
-- User feedback mechanisms
+- Error conditions and how they must be handled
+- User feedback requirements
 - Security-related error handling
 - Outbound data validation
 
@@ -119,7 +144,7 @@ Example of more complex usage scenarios
 
 ### Test Cases
 
-- Test case 1: Expected behavior
+- Test case 1: Expected behaviour
 - Test case 2: Edge case handling
 - Test case 3: Error condition
 - **Security test cases**: Malicious input, boundary conditions, injection attempts
@@ -137,7 +162,7 @@ Example of more complex usage scenarios
 
 - Performance characteristics
 - Resource usage
-- Optimization notes
+- Optimisation requirements
 - DoS protection mechanisms
 
 ## Known Limitations
