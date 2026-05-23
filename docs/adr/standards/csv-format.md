@@ -37,13 +37,12 @@ Parsing and serialisation is delegated to PapaParse, loaded via CDN. See [../dep
 
 ### Risks
 
-- Runtime availability of the CDN-loaded PapaParse library is required for CSV features to function; if cdnjs is unreachable, import and export will fail
+- **CSV injection.** Fields beginning with `=`, `+`, `-`, or `@` are interpreted as formulas by some spreadsheet applications. Modern versions of Excel and Google Sheets no longer auto-execute formulas from imported CSV files, so practical exploitability is low. This will be routinely flagged in security reviews if not addressed.
+- **Inconsistent CSV handling across tools.** CSV has no formal schema or typing. Tools differ on encoding (UTF-8 vs. UTF-8-with-BOM vs. Windows-1252), number formatting (locale-specific decimal separators), and date serialisation. A file produced by one tool may import with subtly wrong values in another, even when both claim RFC 4180 conformance.
 
 ## Rejected Approaches
 
-**Custom RFC 4180 implementation.** The edge cases (embedded newlines, escaped quotes, CRLF/LF tolerance, BOM) require meaningful ongoing maintenance and testing. The cost of in-house ownership is not justified when a healthy browser-compatible library is available.
-
-**Node.js CSV libraries (csv-parse, fast-csv).** Require a bundler to run in the browser, which conflicts with the intentionally minimal build step.
+**XLSX.** Native format for Excel and well-supported in Google Sheets; preserves types and avoids encoding ambiguity. Rejected because the file format is a complex binary/XML container requiring a substantial parsing library, the added weight is not justified for exporting a simple flat table of task data, and CSV is already the expected interchange format for spreadsheet-friendly tools.
 
 **Restricting task names to exclude commas and quotes.** Trades a parsing problem for a permanent usability constraint. Task names are prose; restricting them to work around a deficient parser is not acceptable.
 

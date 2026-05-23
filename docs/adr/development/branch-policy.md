@@ -52,7 +52,7 @@ git checkout -b <type>/<short-description>
 
 **No formal policy.** The absence of policy was the direct cause of the incident that motivated this ADR — unrelated changes accumulated on a branch created for a different fix. Without an explicit expectation, the path of least resistance is to commit to whatever branch is active.
 
-**Pre-push hook enforcement.** Adds friction and requires reliable hook installation across all contributor environments. Deferred unless violations recur.
+**Pre-push hook enforcement.** The policy is fundamentally semantic — a hook can validate branch name format but cannot determine whether the commits on that branch are scoped to a single logical concern. A branch named `fix/auth-bug` with two unrelated changes passes any automated name check. Enforcement would therefore catch only naming violations, not the scope violations that actually matter, while adding friction and requiring reliable hook installation across all contributor environments.
 
 **GitHub branch protection for naming.** GitHub's native branch protection does not enforce naming patterns on feature branches. Third-party GitHub Apps exist for this but add external dependencies not warranted at this scale.
 
