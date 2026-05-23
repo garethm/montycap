@@ -1,48 +1,42 @@
-# ADR-XXXX: [Title]
+# ADR: [Title]
 
-## Status
-
-[Proposed | Accepted | Deprecated | Superseded by ADR-YYYY]
-
-## Context
-
-What is the issue that we're seeing that is motivating this decision or change?
+One or two sentences stating the architectural rule or constraint this document describes.
 
 ## Decision
 
-What is the change that we're proposing or have agreed to implement?
+What the architecture is, in enough detail that a contributor can act on it. Present tense — this is the current state, not a historical record.
 
 ## Rationale
 
-Why are we doing this? What are the forces that led us to this decision?
+Why the architecture is this way. Focus on reasoning that survives the original context being forgotten — constraints, trade-offs, and forces that led here.
 
 ## Consequences
 
-What becomes easier or more difficult to do and any risks introduced by this change?
-
-### Positive
+### Benefits
 
 - Benefit 1
 - Benefit 2
 
-### Negative
+### Risks
 
-- Risk or limitation 1
-- Risk or limitation 2
+- Risk or accepted trade-off 1
+- Risk or accepted trade-off 2
 
-## Alternatives Considered
+## Rejected Approaches
 
-What other approaches did we consider?
+Brief entries for alternatives that were considered and why they were not chosen. Omit this section if no meaningful alternatives were evaluated.
 
-### Alternative 1: [Name]
+**[Alternative name].** Why it was not chosen.
 
-Brief description and why it was rejected.
-
-### Alternative 2: [Name]
-
-Brief description and why it was rejected.
+**[Alternative name].** Why it was not chosen.
 
 ## References
 
-- [Link to relevant documentation]
-- [Link to related discussions]
+- [Link to relevant documentation or related ADR]
+
+## History
+
+Omit if the decision was made once and has not changed.
+
+- **[Initial state]** — brief rationale for why this was the starting point.
+- **[Changed to current state]** — what changed and why.

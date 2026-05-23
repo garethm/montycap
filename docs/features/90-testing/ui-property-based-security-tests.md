@@ -110,5 +110,5 @@ Tests import `addTaskFromData` and `parseCSV` directly from `src/ui.js` as ES mo
 ## Related Documentation
 
 - [Feature: Simulation Engine Property-Based Tests](./simulation-engine-property-based-tests.md)
-- [ADR-0003: Property-Based Testing](../../adr/0003-property-based-testing.md)
+- [Testing](../../adr/development/testing.md)
 - [Security Policy](../../../SECURITY.md)
