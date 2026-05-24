@@ -6,7 +6,9 @@
   "scripts": {
     "build": "node scripts/build.js",
     "test": "vitest run",
-    "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test"
+    "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test",
+    "threatmodel": "threatcl validate threatmodel/*.hcl && threatcl dashboard -outdir=docs/threatmodel -overwrite threatmodel/*.hcl && threatcl dfd -outdir=docs/threatmodel -format=svg -overwrite threatmodel/*.hcl",
+    "threatmodel:validate": "threatcl validate threatmodel/*.hcl"
   },
   "devDependencies": {
     "eslint": "10.3.0",
