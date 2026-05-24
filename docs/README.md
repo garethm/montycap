@@ -15,7 +15,7 @@
 ### For maintainers
 - **[Architecture Decision Records](adr/)** — current architectural decisions by topic
 - **[Feature Documentation](features/)** — feature specifications by workflow phase
-- **[Dependency Review Log](development/dependency-review-log.md)** — periodic dependency health assessments
+- **[Dependency Reviews](development/dependency-reviews/)** — periodic dependency health assessments
 
 ## Documentation Structure
 
@@ -39,7 +39,8 @@ docs/
 └── development/               Contributor and maintenance docs
     ├── CONTRIBUTING.md
     ├── SECURITY.md
-    └── dependency-review-log.md
+    └── dependency-reviews/    Per-date dependency health assessments
+        └── YYYY-MM-DD.md
 ```
 
 ## Documentation Standards
@@ -52,5 +53,5 @@ docs/
 ## Maintenance
 
 - ADRs describe current architectural state; update them in place when the architecture changes
-- Dependency health assessments are recorded in `development/dependency-review-log.md`
+- Dependency health assessments are recorded in `development/dependency-reviews/`
 - Feature documentation should be updated when features change
