@@ -48,7 +48,67 @@ Timeline values are derived from the sorted array of total calendar duration out
 
 ## Security Considerations
 
-All displayed values are numbers computed from simulation output. No user-supplied strings appear in this section.
+### Attack Surface
+
+#### Inbound Data Vectors
+
+- **Simulation output**: All four metric values are numbers derived from the sorted timeline results array. No user-supplied strings reach this section.
+
+#### Outbound Data Vectors
+
+- **DOM rendering**: Metric values are written to the results panel as text. They are numeric strings produced by the application, not user input.
+
+#### Trust Boundaries
+
+- **Simulation to display**: By the time values reach this feature, all user inputs have been consumed and reduced to numeric arrays by the simulation engine. This feature handles only those computed numbers.
+
+### Threat Model
+
+- **XSS via numeric values**: All values are numbers converted to fixed-decimal strings; a number-to-string conversion cannot produce executable markup. Risk: negligible.
+
+### Security Controls
+
+- All DOM construction must use text-safe APIs; numeric values must not be injected as HTML — see [ADR: DOM XSS Prevention](../../adr/security/dom-xss-prevention.md).
+
+## Configuration
+
+This feature introduces no configuration constants. Metric labels are fixed strings.
+
+## Usage Examples
+
+### Reading a timeline grid after a run
+
+```text
+Mean Timeline:      38 days
+Median (P50):       35 days
+80% Confidence:     52 days
+P90 (Worst Case):   68 days
+```
+
+This result suggests committing to 52 business days for an 80% confidence plan, with 68 days held as a contingency ceiling. The gap between P50 (35 days) and P90 (68 days) is nearly double, indicating that tail outcomes significantly stretch the calendar — worth investigating whether wait-time variance or weekly capacity constraints are the primary driver.
+
+## Validation & Error Handling
+
+This feature displays computed values only and performs no validation. If the simulation produces no results — for example because all task rows were empty — the results panel is not shown and this section does not render.
+
+## Testing
+
+### Test Cases
+
+- Four metric tiles appear in the timeline grid after a run
+- The confidence metric label reflects the active confidence setting
+- Timeline values are in business days and are consistent with the Hours per Work Day parameter — halving the parameter must roughly double the day counts
+- All four values are non-negative
+
+### Manual Testing Steps
+
+1. Run with default settings — confirm four metrics appear with labelled values
+2. Change confidence to 70% and re-run — confirm the metric label reads "70% Confidence" and the value is lower than the previous confidence-level result
+3. Change Hours per Work Day from 8 to 4 and re-run — confirm day values approximately double
+
+## Performance Considerations
+
+This feature renders a fixed set of four metric tiles regardless of simulation run count. Performance is not a concern.
 
 ## Known Limitations
 

@@ -61,6 +61,80 @@ The Executive Summary does not introduce new values. Every figure it presents is
 
 Its purpose is synthesis and presentation, not additional analysis.
 
+## Security Considerations
+
+### Attack Surface
+
+#### Inbound Data Vectors
+
+- **Simulation output**: All values in the Executive Summary are numbers derived from effort results, timeline results, and workload data. No user-supplied strings are rendered.
+
+#### Outbound Data Vectors
+
+- **DOM rendering**: Scenario values and resource figures are written as text. Scenario names and card headings are pre-defined string literals.
+
+#### Trust Boundaries
+
+- **Simulation to display**: By the time values reach this feature, all user inputs have been consumed and reduced to numeric results. Scenario names are fixed; there is no path for user-controlled text to appear in this section.
+
+### Threat Model
+
+- **XSS via numeric values**: All values are numbers converted to fixed-decimal strings. A number-to-string conversion cannot produce executable markup. Risk: negligible.
+
+### Security Controls
+
+- All DOM construction must use text-safe APIs; numeric values and pre-defined labels must not be injected as HTML — see [ADR: DOM XSS Prevention](../../adr/security/dom-xss-prevention.md).
+
+## Configuration
+
+This feature introduces no configuration constants. The scenario names (Most Likely Outcome, Conservative Planning, Contingency Planning) are fixed labels.
+
+## Usage Examples
+
+### Using the Planning Scenarios card for stakeholder communication
+
+```text
+Most Likely Outcome:    410 hrs over 35 days
+Conservative Planning:  580 hrs over 52 days   ← commit to this
+Contingency Planning:   670 hrs over 68 days   ← hold as reserve
+```
+
+The Conservative Planning row is the one to present as the plan. The Contingency row is the budget ceiling — the number to quote when asked "what's the worst case?". The Most Likely row anchors the discussion: if the team consistently beats this, capacity should be reassessed.
+
+### Using the Resource Requirements card
+
+```text
+Expected Weekly Capacity:  22 hrs/week
+Peak Weekly Demand:        38 hrs/week
+Capacity Risk Level:       Moderate
+```
+
+The gap between expected (22 hrs/week) and peak (38 hrs/week) indicates uneven weekly demand. The Moderate risk level signals that the programme is within budget in most scenarios but warrants a contingency plan.
+
+## Validation & Error Handling
+
+This feature displays computed values and performs no validation. All scenario values are derived from effort and timeline distributions computed during the simulation run. Resource figures depend on workload data from the confidence-band simulations; if that subset is empty the resource figures may be zero or absent, but the planning scenarios card must still render.
+
+## Testing
+
+> **Incomplete**: Test cases for this section require specific task configurations that produce known percentile values. These need to be defined in a follow-up task.
+
+### Test Cases
+
+- Both cards are present after a simulation run
+- Planning Scenarios shows three rows with correct scenario names
+- The Conservative Planning row uses the confidence-level percentile values, not P50 or P90
+- Resource Requirements shows Expected Weekly Capacity, Peak Weekly Demand, and Capacity Risk Level
+- Capacity Risk Level colouring matches the classification shown in the [Capacity Assessment](./capacity-assessment.md) message
+
+### Manual Testing Steps
+
+> **Incomplete**: Specific input configurations to drive known planning scenario values need to be defined.
+
+## Performance Considerations
+
+This feature renders a fixed set of DOM nodes regardless of simulation run count. Performance is not a concern.
+
 ## Known Limitations
 
 - The scenario names are fixed. "Conservative Planning" is used for the confidence-level percentile regardless of what that percentile is; at an unusually low confidence level (e.g. 60%) the label is misleading.

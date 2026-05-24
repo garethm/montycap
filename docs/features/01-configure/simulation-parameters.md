@@ -100,6 +100,30 @@ Ten parallel instances sharing a standard 40-hour weekly capacity.
 - Other parameters: HTML `min` attribute only; no additional JavaScript enforcement required
 - A non-numeric or empty field must not crash the application; results will be degenerate if fields are missing — all fields should contain valid numbers before running
 
+## Testing
+
+### Test Cases
+
+- `simulations` set to 25,001: input must be styled invalid, inline error must be visible, Run must be disabled
+- `simulations` corrected to 25,000: input must return to valid state, Run must re-enable, error must clear
+- `programQuantity` set to 101: same behaviour as `simulations` above
+- All six parameters at their defaults: simulation must run successfully and produce results
+- `confidence` changed to 90%: results panel must label the highlighted metric "90% Confidence" on the next run
+- `hoursPerDay` changed to 6: timeline values must change on the next run to reflect the new conversion factor
+- A numeric field cleared entirely: application must not throw an error; the run may produce degenerate results but must remain functional
+
+### Manual Testing Steps
+
+1. Set simulations to 25,001 — confirm Run is disabled and the inline error is visible
+2. Correct to 25,000 — confirm Run re-enables and the error clears
+3. Set programQuantity to 101 — confirm Run is disabled
+4. Clear the confidence field entirely and click Run — confirm the application does not crash
+5. Set confidence to 90%, run — confirm the "90% Confidence" label appears in the results panel
+
+## Performance Considerations
+
+Parameter validation runs on each input event and is O(1); there is no performance concern at this level. The parameters themselves bound the simulation runtime — see [Simulation Complexity Limits](../02-simulate/simulation-complexity-limits.md) for how the values interact to determine overall execution cost.
+
 ## Known Limitations
 
 - `capacity` and `weeklyCapacity` have no upper bound

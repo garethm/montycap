@@ -75,6 +75,40 @@ The report area renders only values derived from simulation computation. No user
 
 - **Stale content across runs**: Updating only part of the report on a new run could leave prior values visible alongside new ones. Mitigation: the full report is replaced atomically on each run.
 
+## Configuration
+
+This feature introduces no configuration constants. The section order, heading text, and replacement behaviour are fixed and cannot be changed through parameters or settings.
+
+## Usage Examples
+
+### Navigating the report after a run
+
+After clicking Run (or after the automatic run on page load), scroll past the task grid to reach the results. The sections appear top-to-bottom in the order shown in the layout diagram: Effort Analysis first, Executive Summary last. Each re-run replaces all sections simultaneously, so there is no need to scroll back to the top to check for stale values.
+
+## Validation & Error Handling
+
+This feature performs no validation. All validation of simulation inputs takes place before results are passed to the display layer — see [Simulation Parameters](../01-configure/simulation-parameters.md) and [Simulation Complexity Limits](../02-simulate/simulation-complexity-limits.md). If the simulation produces no results (for example, because all task rows were empty), the results panel must not be shown.
+
+## Testing
+
+### Test Cases
+
+- Results panel is not visible on page load before the automatic run completes
+- Results panel becomes visible after the first simulation run
+- All seven sections appear in the documented order after a run
+- Running the simulation a second time replaces all section content; no values from the previous run remain visible
+- If all task rows are empty, the results panel must not be shown
+
+### Manual Testing Steps
+
+1. Load the page — confirm the results area below the task grid is not visible before the automatic run completes
+2. After the run completes, scroll down — confirm all seven sections are present in order: Effort Analysis, capacity assessment message, Timeline Analysis, effort chart, timeline chart, workload chart, Executive Summary
+3. Change a simulation parameter and click Run — confirm all section values update and no old values are visible alongside new ones
+
+## Performance Considerations
+
+The results panel is rebuilt in full on each run. The number of DOM nodes created is fixed regardless of simulation run count — the panel always contains the same sections with the same structure. Rebuild time is imperceptible at the scale of outputs this application handles.
+
 ## Known Limitations
 
 - The section order is fixed; there is no user control over which sections appear or in what order.
