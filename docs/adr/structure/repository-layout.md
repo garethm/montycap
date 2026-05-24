@@ -11,6 +11,7 @@ montycap/
 ├── test/                  Automated tests
 ├── web/                   Built artifact (gitignored)
 ├── docs/                  All project documentation
+├── threatmodel/           threatcl HCL threat model source files
 ├── .github/               GitHub workflows and configuration
 └── [root config files]    Project metadata and tooling configuration
 ```
@@ -18,6 +19,10 @@ montycap/
 ### `web/` — Built artifact
 
 `web/index.html` is the assembled application — a self-contained HTML file requiring no server or runtime dependencies. It is gitignored; every build produces it fresh from `src/`.
+
+### `threatmodel/` — Threat model source
+
+threatcl HCL files defining the application's threat model. Generated output (dashboard markdown, DFD diagrams) is written to `docs/threatmodel/` and gitignored. See [threat-modeling.md](../security/threat-modeling.md).
 
 ### `docs/` — Documentation
 
@@ -30,7 +35,7 @@ montycap/
 
 **`src/` contains the source files assembled into the deployed artifact.** The internal structure of those files — how they are divided and why — is covered in [source-and-build.md](source-and-build.md).
 
-**`web/index.html` is not versioned.** It is deterministically produced from `src/` on every build. Committing it alongside its sources creates drift risk and unnecessary diff noise; the gitignore enforces that only source is versioned.
+**`web/index.html` and `docs/threatmodel/` are not versioned.** Both are deterministically produced by their respective build steps (`npm run build` and `npm run threatmodel`). Committing generated output alongside its sources creates drift risk and unnecessary diff noise; the gitignore enforces that only source is versioned.
 
 **`docs/` collects all documentation under one tree.** Keeping documentation in a single directory makes it easy to locate, cross-link, and apply consistent standards. Subdirectories group by audience and purpose rather than by code layer.
 
@@ -57,9 +62,11 @@ montycap/
 
 - [source-and-build.md](source-and-build.md)
 - [documentation.md](documentation.md)
+- [threat-modeling.md](../security/threat-modeling.md)
 
 ## History
 
 - **Single file at root** (`web/index.html` alongside flat documentation) — the original structure; simple but did not separate code from docs and made linting and testing impractical.
 - **`web/` and `docs/` directories introduced** — code and documentation separated as the project grew and a more navigable layout was needed.
 - **`src/`, `scripts/`, and `test/` added** — source split into separate files to enable direct linting and importable modules; the build step was introduced to reassemble them into `web/index.html`, with tests arriving alongside it.
+- **`threatmodel/` added** — threatcl HCL threat model introduced as a separate source directory following the same pattern as `src/`; generated output gitignored.

@@ -34,6 +34,17 @@ npm test
 ```
 Runs property-based tests in `test/` using vitest and fast-check.
 
+### Threat Model
+```
+npm run threatmodel
+```
+Validates the HCL source, then generates dashboard markdown and an SVG data flow diagram into `docs/threatmodel/` (gitignored).
+
+```
+npm run threatmodel:validate
+```
+Validates `threatmodel/*.hcl` only — suitable as a lightweight CI check. Requires `threatcl` to be installed (`brew install threatcl` or equivalent).
+
 ### Development Tools
 - JavaScript lint: `npx eslint src/simulation.js src/ui.js`
 - HTML validation: `npx html-validate web/index.html`
