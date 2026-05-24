@@ -11,8 +11,6 @@
 - **[Foundation](foundation.md)** — start here to understand the design intent
 - **[Contributing Guide](development/CONTRIBUTING.md)** — how to contribute
 - **[Branch Policy](adr/development/branch-policy.md)** — branch naming and scoping
-
-### For maintainers
 - **[Architecture Decision Records](adr/)** — current architectural decisions by topic
 - **[Feature Documentation](features/)** — feature specifications by workflow phase
 - **[Dependency Reviews](development/dependency-reviews/)** — periodic dependency health assessments
