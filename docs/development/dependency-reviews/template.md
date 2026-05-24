@@ -8,7 +8,7 @@ Save this file as `YYYY-MM-DD.md` in `docs/development/dependency-reviews/`.
 
 ---
 
-## Review YYYY-MM-DD
+## Dependency Review YYYY-MM-DD
 
 **Reviewer**: [Name]
 **Scope**: [All dependencies | specific packages] — [reason, e.g. scheduled review, new dependency added, CVE alert]
