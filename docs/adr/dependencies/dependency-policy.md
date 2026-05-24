@@ -33,9 +33,9 @@ Each dependency ADR must document:
 
 ### Periodic review
 
-Dependencies must be reviewed periodically. The outcome — including date, dependencies assessed, and actions taken or deferred — is recorded in `docs/development/dependency-review-log.md`. An entry is required even when no action is taken.
+Dependencies must be reviewed periodically. Each review is recorded as a separate file named `YYYY-MM-DD.md` in `docs/development/dependency-reviews/`, using the template at `docs/development/dependency-reviews/template.md`. An entry is required even when no action is taken.
 
-A dependency failing one criterion warrants monitoring and a note in the review log. Failure of two or more criteria warrants a replacement ADR.
+A dependency failing one criterion warrants monitoring and a note in the review file. Failure of two or more criteria warrants a replacement ADR.
 
 ### Grandfathered dependencies
 
@@ -71,5 +71,10 @@ The dependencies present when this policy was adopted — `eslint`, `fast-check`
 
 ## References
 
-- [dependency-review-log.md](../development/dependency-review-log.md)
+- [dependency-reviews/](../development/dependency-reviews/)
 - [../security/openssf-scorecard.md](../security/openssf-scorecard.md)
+
+## History
+
+- **Reviews recorded in a single log file** — all review entries appended to `docs/development/dependency-review-log.md`.
+- **Reviews split into per-date files** — log replaced with `docs/development/dependency-reviews/YYYY-MM-DD.md` files to make it easier to see at a glance when reviews have been done.
