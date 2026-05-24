@@ -10,6 +10,7 @@ Thank you for your interest in contributing to this project! This document provi
 - Text editor or IDE
 - Node.js (for development tools)
 - Python 3.6+ (for pre-commit hooks)
+- [threatcl](https://github.com/threatcl/threatcl) (for threat model generation — `brew install threatcl` on macOS)
 
 ### Development Setup
 
@@ -182,6 +183,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Changing existing functionality
 - Fixing security issues
 - Modifying file formats or data structures
+- Adding new input paths, external dependencies, or data handling — update `threatmodel/montycap.hcl` to reflect any changes to the attack surface
 
 ### Documentation Types
 
@@ -206,7 +208,7 @@ All contributions undergo security review focusing on:
 - Output encoding
 - Client-side data handling
 - External dependency security
-- Attack surface analysis
+- Attack surface analysis — if the change introduces a new input path or dependency, update `threatmodel/montycap.hcl` and run `npm run threatmodel:validate`
 - Pre-commit hook security checks
 
 ## Getting Help

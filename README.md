@@ -118,6 +118,7 @@ MIT License - see LICENSE file for details
 
 - **[Contributing Guide](docs/development/CONTRIBUTING.md)**: How to contribute to this project
 - **[Security Policy](docs/development/SECURITY.md)**: Security considerations and vulnerability reporting
+- **[Threat Model](docs/adr/security/threat-modeling.md)**: Threat modeling approach and the threatcl model in `threatmodel/`
 - **[Architecture Decisions](docs/adr/)**: Technical decisions and their rationale
 - **[Feature Documentation](docs/features/)**: Detailed feature specifications
 
