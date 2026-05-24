@@ -53,7 +53,71 @@ Effort values are derived from the sorted array of total effort outputs across a
 
 ## Security Considerations
 
-All displayed values are numbers computed from simulation output. No user-supplied strings (such as task names) appear in this section. The available capacity value is echoed from a numeric form field.
+### Attack Surface
+
+#### Inbound Data Vectors
+
+- **Simulation output**: All six metric values are numbers derived from the sorted effort results array and the capacity parameter. No user-supplied strings reach this section.
+
+#### Outbound Data Vectors
+
+- **DOM rendering**: Metric values are written to the results panel as text. They are numeric strings produced by the application, not user input.
+
+#### Trust Boundaries
+
+- **Simulation to display**: By the time values reach this feature, all user inputs have been consumed and reduced to numeric arrays by the simulation engine. This feature handles only those computed numbers.
+
+### Threat Model
+
+- **XSS via numeric values**: All values are numbers converted to fixed-decimal strings; a number-to-string conversion cannot produce executable markup. Risk: negligible.
+
+### Security Controls
+
+- All DOM construction must use text-safe APIs; numeric values must not be injected as HTML — see [ADR: DOM XSS Prevention](../../adr/security/dom-xss-prevention.md).
+
+## Configuration
+
+This feature introduces no configuration constants. Metric labels are fixed strings. The risk thresholds that classify Over Capacity Risk are defined in the [Capacity Assessment](./capacity-assessment.md) feature.
+
+## Usage Examples
+
+### Reading an effort grid after a run
+
+```text
+Mean Effort:          430 hrs
+Median (P50):         410 hrs
+80% Confidence:       580 hrs
+P90 (Worst Case):     670 hrs
+Available Capacity:   500 hrs
+Over Capacity Risk:   34%
+```
+
+This result indicates high risk: 34% of runs exceeded the 500-hour budget. The gap between P50 (410 hrs) and P90 (670 hrs) is wide, suggesting a skewed distribution with a meaningful tail. A planner using 80% confidence should plan for 580 hours — 80 hours over the current budget.
+
+## Validation & Error Handling
+
+This feature displays computed values only and performs no validation. If the simulation produces no results — for example because all task rows were empty — the results panel is not shown and this section does not render.
+
+## Testing
+
+### Test Cases
+
+- Six metric tiles appear in the effort grid after a run
+- The confidence metric label reflects the active confidence setting (e.g. "80% Confidence" when confidence is set to 80%)
+- Over Capacity Risk is 0% when available capacity exceeds all effort values in the simulation
+- Over Capacity Risk is 100% when available capacity is less than all effort values
+- The Available Capacity metric matches the value entered in Simulation Settings
+
+### Manual Testing Steps
+
+1. Run with default settings — confirm six metrics appear with labelled values
+2. Change confidence to 90% and re-run — confirm the metric label reads "90% Confidence"
+3. Set available capacity to 1 and re-run — confirm Over Capacity Risk is close to 100%
+4. Set available capacity to a very large number and re-run — confirm Over Capacity Risk is 0%
+
+## Performance Considerations
+
+This feature renders a fixed set of six metric tiles regardless of simulation run count. Performance is not a concern.
 
 ## Known Limitations
 

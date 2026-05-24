@@ -93,6 +93,26 @@ Column headers (`Task Name`, `Skip %`, `Work Opt (hrs)`, etc.) must be rendered 
 |---|---|
 | `MAX_TASKS` | 100 |
 
+## Usage Examples
+
+### Adding tasks for a typical review programme
+
+```text
+Task Name: Supplier Security Review  | Skip %: 0  | Work O/E/P: 8 / 32 / 96 hrs  | Wait O/E/P: 0 / 2 / 5 days
+Task Name: Vulnerability Assessment  | Skip %: 0  | Work O/E/P: 24 / 64 / 120 hrs | Wait O/E/P: 1 / 3 / 7 days
+Task Name: Supplier Follow-up        | Skip %: 60 | Work O/E/P: 8 / 24 / 64 hrs   | Wait O/E/P: 0 / 1 / 3 days
+```
+
+The 60% skip probability on the follow-up task reflects that not every instance requires one.
+
+### Representing a task with high uncertainty
+
+```text
+Task Name: Legal Review  | Skip %: 0  | Work O/E/P: 4 / 16 / 80 hrs  | Wait O/E/P: 5 / 15 / 40 days
+```
+
+A wide pessimistic range (80 hrs work, 40 days wait) reflects genuine uncertainty; the PERT distribution will cluster outcomes near the expected values but preserve the tail.
+
 ## Validation & Error Handling
 
 - Rows with an empty task name or any missing work effort field must be excluded from the simulation run without surfacing an error — the run must proceed on the remaining valid rows
@@ -117,10 +137,20 @@ Column headers (`Task Name`, `Skip %`, `Work Opt (hrs)`, etc.) must be rendered 
 4. Remove one task — confirm Add Task re-enables and message hides
 5. Enter `<img src=x onerror=alert(1)>` as a task name and run — confirm no alert fires and the value is treated as plain text
 
+## Performance Considerations
+
+Adding and removing task rows is O(1); the task grid never grows large enough for DOM manipulation to be a concern. The 100-task limit bounds the grid size and ensures the simulation itself remains tractable — see [Simulation Complexity Limits](../02-simulate/simulation-complexity-limits.md).
+
 ## Known Limitations
 
 - Tasks have no reorder capability; they execute in the order they appear in the grid
 - An inverted effort range (pessimistic < optimistic) is accepted without warning
+
+## Future Enhancements
+
+- Allow tasks to be reordered by drag-and-drop
+- Warn when a task has an inverted effort range (pessimistic less than optimistic)
+- Support named task templates that can be inserted into the grid from a preset library
 
 ## Related Documentation
 

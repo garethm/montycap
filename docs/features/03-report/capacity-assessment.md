@@ -43,6 +43,87 @@ The same risk classification appears again in the Executive Summary's Resource R
 
 The Capacity Assessment does not introduce new information — it is a presentation layer over the Over Capacity Risk percentage shown in the [Effort Analysis](./effort-analysis.md) grid. The percentage drives both the metric value and the assessment message from the same source.
 
+## Security Considerations
+
+### Attack Surface
+
+#### Inbound Data Vectors
+
+- **Simulation output**: The over-capacity percentage is a number computed from the effort results array. No user-supplied strings are used in this feature.
+
+#### Outbound Data Vectors
+
+- **DOM rendering**: The message text is composed of pre-defined string literals and the over-capacity percentage. The percentage is a number formatted as a string; it cannot contain markup.
+
+#### Trust Boundaries
+
+- **Simulation to display**: The over-capacity value is a computed number, not user input. Pre-defined message strings are concatenated with it; there is no path for user-controlled text to enter the message.
+
+### Threat Model
+
+- **XSS via percentage value**: The percentage is a number formatted as a fixed-decimal string. A number-to-string conversion cannot produce executable markup. Risk: negligible.
+
+### Security Controls
+
+- Message text must be composed using DOM text APIs, not HTML string concatenation — see [ADR: DOM XSS Prevention](../../adr/security/dom-xss-prevention.md).
+
+## Configuration
+
+| Threshold | Value | Effect |
+|---|---|---|
+| Moderate risk lower bound | 5% | Over-capacity risk above this value triggers the Moderate Risk message |
+| High risk lower bound | 20% | Over-capacity risk above this value triggers the Capacity Risk message |
+
+## Usage Examples
+
+### Low risk result
+
+```text
+Over Capacity Risk: 3%
+Message: ✅ Good Capacity: Only 3% chance of exceeding available hours.
+         Reasonable buffer for unexpected work.
+```
+
+### Moderate risk result
+
+```text
+Over Capacity Risk: 14%
+Message: ⚠️ Moderate Risk: 14% chance of exceeding available hours.
+         Monitor closely and have contingency plans.
+```
+
+### High risk result
+
+```text
+Over Capacity Risk: 42%
+Message: ⚠️ Capacity Risk: 42% chance of exceeding available hours.
+         Consider reducing scope or increasing capacity.
+```
+
+## Validation & Error Handling
+
+This feature displays a message derived from a computed value and performs no validation. The over-capacity percentage is always a number between 0 and 100; all three risk bands are exhaustive and mutually exclusive, so a message is always shown when results are present.
+
+## Testing
+
+> **Incomplete**: Test cases for this section require specific task configurations and parameter values that reliably produce over-capacity percentages in each risk band. These need to be defined in a follow-up task.
+
+### Test Cases
+
+- Over-capacity risk ≤ 5%: Good Capacity message with ✅ indicator must be shown
+- Over-capacity risk between 6% and 20%: Moderate Risk message with ⚠️ indicator must be shown
+- Over-capacity risk > 20%: Capacity Risk message with ⚠️ indicator must be shown
+- Boundary at exactly 5%: Good Capacity message shown
+- Boundary at exactly 20%: Moderate Risk message shown
+
+### Manual Testing Steps
+
+> **Incomplete**: Specific input configurations to drive each risk level need to be defined.
+
+## Performance Considerations
+
+This feature evaluates one comparison and renders a single line of text. Performance is not a concern.
+
 ## Known Limitations
 
 - The risk thresholds (5% and 20%) are fixed. There is no way to adjust them to match a particular organisation's risk tolerance.

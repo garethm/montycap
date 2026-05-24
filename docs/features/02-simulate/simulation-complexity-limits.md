@@ -95,6 +95,35 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 | Tasks | 100 | 3 (initial rows) | Generous ceiling; beyond this the UI becomes unwieldy |
 | Complexity budget | 5,000,000 ops | — | Advisory warning threshold; ~300k ops takes ~12s at observed throughput, so 5M is a meaningful signal |
 
+## Usage Examples
+
+### A configuration within all limits
+
+```text
+Simulation runs:   1,000
+Program quantity:  5
+Tasks:             10
+Complexity:        50,000 operations — no warning, runs immediately
+```
+
+### A configuration that triggers the advisory warning
+
+```text
+Simulation runs:   10,000
+Program quantity:  10
+Tasks:             60
+Complexity:        6,000,000 operations — warning banner shown, user can proceed
+```
+
+### A configuration that is hard-blocked
+
+```text
+Simulation runs:   30,000  ← exceeds 25,000 limit
+Program quantity:  5
+Tasks:             10
+Result:            Run button disabled; simulations input shows invalid state
+```
+
 ## Validation & Error Handling
 
 - Each numeric input is validated on `input` and `change` events
@@ -146,3 +175,9 @@ As a capacity planner, I want the tool to warn me before I kick off an unreasona
 
 - Move simulation loop to a Web Worker to keep the UI fully responsive during long runs
 - Adaptive budget estimate based on a short benchmark run on the user's device
+
+## Related Documentation
+
+- [Simulation Parameters](../01-configure/simulation-parameters.md) — the `simulations` and `programQuantity` parameters that this feature limits
+- [Task Management](../01-configure/task-management.md) — the task count limit that this feature enforces
+- [CSV Import](../04-exchange/csv-import.md) — imports are also subject to the 100-task limit

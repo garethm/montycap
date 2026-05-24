@@ -15,6 +15,13 @@ Language:
   technical feature (testing infrastructure, build tooling, security controls). For
   user-facing features, describe behaviour and intent.
 
+Mandatory sections:
+- Every section in this template must appear in every document, including sections
+  that do not apply. When a section does not apply, include it with a brief
+  explanation of why — for example: "This feature performs no DOM rendering and
+  introduces no outbound data vectors." Omitting a section signals that it was
+  forgotten, not considered.
+
 Implementation Details section:
 - Include it only for technical features (e.g. property-based tests, build pipeline,
   security tooling) where knowing the code structure is part of the specification
@@ -40,7 +47,9 @@ As a [user type], I want [functionality] so that [benefit/goal].
 
 ### User Interface
 
-Describe the UI elements and interactions this feature requires.
+Describe the UI elements and interactions this feature requires. For features with a
+visual layout, an ASCII diagram is appropriate to show structure and relative position
+of elements. If the feature has no UI, state that and explain why.
 
 ### Data Flow
 
