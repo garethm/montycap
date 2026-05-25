@@ -6,7 +6,11 @@
   "scripts": {
     "build": "node scripts/build.js",
     "test": "vitest run",
-    "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test"
+    "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test",
+    "pytm:setup": "python3 -m venv pytm-env && pytm-env/bin/pip install -r pytm/requirements.txt",
+    "pytm:report": "mkdir -p docs/pytm && pytm-env/bin/python3 pytm/montycap.py --markdown > docs/pytm/report.md",
+    "pytm:dfd": "mkdir -p docs/pytm && pytm-env/bin/python3 pytm/montycap.py --dfd | dot -Tpng -o docs/pytm/dfd.png",
+    "pytm": "npm run pytm:report && npm run pytm:dfd"
   },
   "devDependencies": {
     "eslint": "10.3.0",

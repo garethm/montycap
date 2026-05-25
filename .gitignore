@@ -1,3 +1,5 @@
 node_modules/
 web/index.html
 .DS_Store
+pytm-env/
+docs/pytm/
