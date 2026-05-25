@@ -37,7 +37,13 @@ Threat models for this project are authored as threatcl HCL files in `threatmode
 
 **OWASP Threat Dragon.** A well-supported visual tool with a JSON model file. Rejected primarily because the JSON output is verbose and not practically reviewable in PRs — the diff for a minor change is hundreds of lines of coordinates and metadata. It also has no build/validate step that integrates naturally with an npm workflow.
 
-**pytm.** A Python-based code-first threat modeling library that generates DFDs and reports. Technically well-suited to the code-first approach we wanted, but adds a Python toolchain dependency to a JavaScript project. The project is less actively maintained than threatcl.
+**pytm.** A Python-based code-first threat modeling library that generates DFDs and reports. Evaluated via a proof-of-concept model of the same architecture as the threatcl model (see `chore/pytm-poc`). Three findings drove the decision not to adopt it.
+
+*Built-in threat library assumes server-side architecture.* Against a browser-only model, pytm's CAPEC-derived library generated 168 findings by default, the majority inapplicable — SQL injection, LDAP injection, buffer overflows, dictionary password attacks, session replay, network interception. Reducing this to a relevant set required either a 27-entry manual EXCLUDE list (filtering at the reporting layer) or setting Controls flags accurately across all elements (suppressing at the model layer). Both approaches require ongoing maintenance: the EXCLUDE list must be audited on every pytm upgrade; the Controls approach requires consistency across all elements or threats resurface on elements that were missed.
+
+*Controls are binary and imply zero residual risk.* pytm's Controls model is a set of boolean flags. Once a flag is set, the corresponding threats are removed from findings entirely — there is no concept of partial mitigation or residual risk. In practice this means the model cannot represent that `sanitizesInput = True` reduces XSS likelihood substantially but does not eliminate it. threatcl's explicit `risk_reduction` score per control, and the fact that threats remain visible alongside their controls regardless of implementation status, allows the model to reflect that no control is perfect and that implemented mitigations still warrant ongoing review.
+
+*Toolchain overhead.* pytm is a Python library, not a CLI binary. It requires a virtual environment (`python3 -m venv`), a `requirements.txt`, and graphviz for DFD output — three separate installation steps versus one binary for threatcl. This is a meaningful barrier in a JavaScript project where no Python toolchain is otherwise required.
 
 **Threagile.** YAML-based threat modeling with report generation. Requires Docker or a Java runtime, which is disproportionate overhead for a project this size. YAML models also grow verbose quickly and lack strong validation of STRIDE or CIA fields.
 
