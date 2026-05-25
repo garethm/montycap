@@ -8,7 +8,9 @@
     "test": "vitest run",
     "validate": "npx eslint src/simulation.js src/ui.js && npm run build && npx html-validate web/index.html && npm test",
     "threatmodel": "threatcl validate threatmodel/*.hcl && threatcl dashboard -outdir=docs/threatmodel -overwrite threatmodel/*.hcl && threatcl dfd -outdir=docs/threatmodel -format=svg -overwrite threatmodel/*.hcl",
-    "threatmodel:validate": "threatcl validate threatmodel/*.hcl"
+    "threatmodel:validate": "threatcl validate threatmodel/*.hcl",
+    "threatmodel:threagile": "mkdir -p docs/threatmodel && docker run --rm -v \"$PWD/threatmodel/threagile:/app/source:ro\" -v \"$PWD/docs/threatmodel:/app/output\" threagile/threagile:latest -model /app/source/montycap.yaml -output /app/output",
+    "threatmodel:threagile:validate": "docker run --rm -v \"$PWD/threatmodel/threagile:/app/source:ro\" threagile/threagile:latest -model /app/source/montycap.yaml -dry-run"
   },
   "devDependencies": {
     "eslint": "10.3.0",

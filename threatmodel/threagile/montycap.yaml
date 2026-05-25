@@ -1,0 +1,1786 @@
+threagile_version: 1.0.0
+
+title: montycap
+
+date: 2026-05-25
+
+author:
+  name: Gareth Marshall
+  homepage: github.com/garethm/montycap
+
+management_summary_comment: >
+  Browser-only Monte Carlo simulation tool for capacity planning. Runs entirely client-side
+  as a single HTML file with no server component, no authentication, and no persistent storage.
+
+business_criticality: operational
+
+business_overview:
+  description: >
+    montycap is a self-contained browser application that runs Monte Carlo simulations
+    for software project capacity planning. All computation occurs in the user's browser.
+    There is no server, no backend API, and no network transmission of user data.
+
+technical_overview:
+  description: >
+    A single HTML file assembled from JavaScript source. External dependencies (Chart.js,
+    PapaParse) are loaded from public CDNs with Subresource Integrity pinning. All state
+    is session-only and discarded on page close.
+
+questions:
+  Is there any server-side processing of user data?: "No. The application is a static HTML file; all processing occurs in the browser."
+  Is user data transmitted over any network?: "No. Task configurations and simulation results remain in the browser session."
+  Are there persistent data stores?: "No. All data is session-only."
+
+abuse_cases:
+  CDN Supply Chain Attack: >
+    An attacker compromises the Chart.js or PapaParse CDN and serves a malicious script version.
+    The script executes in the user's browser with full page access.
+  Malicious CSV Import: >
+    A user opens a crafted CSV file containing HTML/script payloads or formula injection characters,
+    leading to XSS or downstream spreadsheet formula execution.
+  Simulation Complexity DoS: >
+    A crafted CSV with extreme task counts or quantity values causes the simulation loop to
+    consume excessive CPU, hanging the browser tab.
+  Build Pipeline Compromise: >
+    A malicious GitHub Actions workflow, compromised action dependency, or poisoned npm package
+    causes a tampered web/index.html to be deployed to GitHub Pages and served to all users.
+  Unauthorised Deployment: >
+    An attacker gains write access to the main or gh-pages branch and pushes a malicious built
+    artifact that is served directly to users.
+
+security_requirements:
+  SRI Pinning: All CDN resources must use integrity= SHA-384 hashes to prevent supply chain compromise.
+  Content Security Policy: A strict CSP must be present to restrict script execution to known sources.
+  Safe DOM Rendering: User-supplied strings must be inserted via textContent, never innerHTML.
+  CSV Input Validation: CSV imports must be validated and sanitised before being stored in application state.
+  Formula Injection Hardening: Exported CSV fields must be prefixed to neutralise spreadsheet formula triggers.
+  Complexity Limits: Maximum bounds on task count, quantity, and simulation runs must be enforced.
+  Pinned Actions: All GitHub Actions must reference pinned commit SHAs, not mutable tags, to prevent supply chain compromise.
+  Branch Protection: The main branch must require pull request reviews before merging; direct pushes must be blocked.
+  Minimal Token Scope: The GITHUB_TOKEN granted to the deploy workflow must be scoped to the minimum required permissions.
+
+tags_available:
+  - browser
+  - cdn
+  - javascript
+  - csv
+  - chart.js
+  - papaparse
+  - github
+  - github-actions
+  - github-pages
+  - npm
+
+data_assets:
+
+  Task Configuration:
+    id: task-configuration
+    description: Task names, effort estimates, skip probabilities, and capacity settings entered by the user. Session-only; never transmitted or persisted.
+    usage: business
+    origin: User
+    owner: User
+    quantity: few
+    confidentiality: restricted
+    integrity: operational
+    availability: operational
+    justification_cia_rating: Session-only data with no transmission. Restricted because it may reflect internal project plans.
+
+  Imported CSV:
+    id: imported-csv
+    description: CSV files uploaded by the user containing task data. Parsed entirely in the browser.
+    usage: business
+    origin: User filesystem
+    owner: User
+    quantity: few
+    confidentiality: restricted
+    integrity: important
+    availability: operational
+    justification_cia_rating: Integrity is important because malicious CSV content is the primary injection vector.
+
+  Simulation Results:
+    id: simulation-results
+    description: Monte Carlo simulation output — effort distributions, capacity risk metrics. Derived from task-configuration; session-only.
+    usage: business
+    origin: montycap application
+    owner: User
+    quantity: few
+    confidentiality: restricted
+    integrity: important
+    availability: operational
+    justification_cia_rating: Integrity matters as corrupted results would mislead planning decisions.
+
+  Exported CSV:
+    id: exported-csv
+    description: CSV file produced by the export function, written to the user's filesystem. Contains task configuration data serialised for use in external tools. Leaves the system boundary.
+    usage: business
+    origin: montycap application
+    owner: User
+    quantity: few
+    confidentiality: restricted
+    integrity: important
+    availability: operational
+    justification_cia_rating: Integrity critical — exported CSV may be opened in spreadsheet applications where formula injection could execute.
+
+  Source Code:
+    id: source-code
+    description: JavaScript source (src/simulation.js, src/ui.js), HTML template, build scripts, and GitHub Actions workflows stored in the GitHub repository.
+    usage: devops
+    origin: Developer
+    owner: "@garethm"
+    quantity: very-few
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Source code is public. Integrity is critical — tampered source would produce a malicious
+      built artifact deployed to all users. Availability important to maintain development velocity.
+
+  Built Artifact:
+    id: built-artifact
+    description: The assembled web/index.html produced by the build pipeline and deployed to the gh-pages branch for serving via GitHub Pages.
+    usage: devops
+    origin: GitHub Actions build pipeline
+    owner: "@garethm"
+    quantity: very-few
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      The artifact is public (served to all users). Integrity is critical — a tampered artifact
+      would execute malicious JavaScript in every user's browser.
+
+  npm Dependencies:
+    id: npm-dependencies
+    description: Node.js build-time dependencies (vitest, fast-check, eslint, html-validate, etc.) fetched from the npm registry during CI. Not shipped in the built artifact; CDN libraries are pinned via SRI separately.
+    usage: devops
+    origin: npm registry
+    owner: Open source maintainers
+    quantity: few
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity is important — a compromised npm package could modify the build output or exfiltrate
+      source code during CI. Dependabot monitors for known vulnerabilities.
+
+
+technical_assets:
+
+  montycap Application:
+    id: montycap-app
+    description: >
+      Self-contained Monte Carlo capacity planning tool delivered as a single HTML file, typically
+      served from GitHub Pages and executed entirely within the user's browser. Includes simulation
+      engine (PERT/Beta distributions), CSV import/export via PapaParse, and chart visualisation
+      via Chart.js. No server component; all state is session-only.
+    type: process
+    usage: business
+    used_as_client_by_human: true
+    out_of_scope: false
+    justification_out_of_scope:
+    size: application
+    technology: web-application
+    tags:
+      - browser
+      - javascript
+      - csv
+      - chart.js
+      - papaparse
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: "@garethm"
+    confidentiality: restricted
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Processes user-supplied task data including CSV uploads. Restricted confidentiality as task
+      names may reflect internal project plans. Integrity important as simulation errors would
+      mislead capacity planning decisions.
+    multi_tenant: false
+    redundant: false
+    custom_developed_parts: true
+    data_assets_processed:
+      - built-artifact
+      - task-configuration
+      - imported-csv
+    data_assets_stored:
+      - simulation-results
+      - exported-csv
+    data_formats_accepted:
+      - csv
+    communication_links:
+      Deliver Simulation Results to User:
+        target: user
+        description: Simulation results rendered to the DOM and displayed in the browser.
+        protocol: in-process-library-call
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: business
+        data_assets_sent:
+          - simulation-results
+        data_assets_received:
+      Deliver Exported CSV to User:
+        target: user
+        description: Exported task configuration CSV delivered to the user via a Blob URL download.
+        protocol: in-process-library-call
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: business
+        data_assets_sent:
+          - exported-csv
+        data_assets_received:
+      Load Chart.js from CDN:
+        target: chartjs-cdn
+        description: Chart.js library loaded from CDN over HTTPS with SRI hash verification.
+        protocol: https
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: true
+        usage: business
+        data_assets_sent:
+        data_assets_received:
+      Load PapaParse from CDN:
+        target: papaparse-cdn
+        description: PapaParse library loaded from CDN over HTTPS with SRI hash verification.
+        protocol: https
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: true
+        usage: business
+        data_assets_sent:
+        data_assets_received:
+
+  User:
+    id: user
+    description: The human user operating montycap in their browser. Out of scope — owned and managed by the end user.
+    type: external-entity
+    usage: business
+    used_as_client_by_human: true
+    out_of_scope: true
+    justification_out_of_scope: Owned and managed by the end user; not within the application trust boundary.
+    size: component
+    technology: browser
+    tags:
+      - browser
+    internet: false
+    machine: physical
+    encryption: none
+    owner: End user
+    confidentiality: internal
+    integrity: operational
+    availability: operational
+    justification_cia_rating: External actor; not within the system trust boundary.
+    multi_tenant: false
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - task-configuration
+      - imported-csv
+      - simulation-results
+      - exported-csv
+    data_assets_stored:
+    data_formats_accepted:
+      - csv
+    communication_links:
+      Form Input:
+        target: montycap-app
+        description: User enters task names, estimates, and settings via the browser form.
+        protocol: in-process-library-call
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: business
+        data_assets_sent:
+          - task-configuration
+        data_assets_received:
+      CSV Upload:
+        target: montycap-app
+        description: User uploads a CSV file containing task configuration via the browser File API.
+        protocol: in-process-library-call
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: business
+        data_assets_sent:
+          - imported-csv
+        data_assets_received:
+
+  Developer:
+    id: developer
+    description: The developer pushing source code changes to GitHub. Out of scope — owned and managed by the contributor.
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: true
+    out_of_scope: true
+    justification_out_of_scope: Owned and managed by the contributor; not within the application trust boundary.
+    size: component
+    technology: desktop
+    tags:
+      - github
+    internet: false
+    machine: physical
+    encryption: none
+    owner: "@garethm"
+    confidentiality: internal
+    integrity: operational
+    availability: operational
+    justification_cia_rating: External actor; not within the system trust boundary.
+    multi_tenant: false
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+      Push Source Code:
+        target: github-repo
+        description: Developer pushes commits or opens pull requests to the GitHub repository.
+        protocol: https
+        authentication: credentials
+        authorization: enduser-identity-propagation
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+        data_assets_received:
+
+  GitHub Repository:
+    id: github-repo
+    description: >
+      GitHub-hosted source code repository (garethm/montycap). Stores source code, workflows,
+      and the gh-pages branch containing the built artifact. Branch protection requires PRs for main.
+    type: datastore
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: sourcecode-repository
+    tags:
+      - github
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: GitHub
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Integrity is critical — the repository is the source of truth for what gets built and deployed.
+      A tampered main branch or gh-pages branch would directly affect what users receive.
+    multi_tenant: true
+    redundant: true
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+      - built-artifact
+    data_assets_stored:
+      - source-code
+      - built-artifact
+    data_formats_accepted:
+    communication_links:
+      Trigger CI on Push:
+        target: github-actions
+        description: GitHub triggers the CI and deploy workflows on push to main or pull request.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+        data_assets_received:
+
+  GitHub Actions:
+    id: github-actions
+    description: >
+      GitHub-hosted CI/CD pipeline executing ci.yml, deploy.yml, security-scan.yml, and related
+      workflows. Runs lint, tests, HTML validation, Trivy/TruffleHog security scans, builds
+      web/index.html, and deploys to GitHub Pages on merge to main. All Actions are pinned to
+      commit SHAs. Runner egress is audited via step-security/harden-runner.
+    type: process
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: build-pipeline
+    tags:
+      - github
+      - github-actions
+      - npm
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: GitHub
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Integrity is critical — the build pipeline transforms source into the deployed artifact.
+      A compromised pipeline could insert malicious code into web/index.html before deployment.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: true
+    data_assets_processed:
+      - source-code
+      - npm-dependencies
+      - built-artifact
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+      Fetch npm Dependencies:
+        target: npm-registry
+        description: npm ci fetches build-time dependencies from the npm registry during CI.
+        protocol: https
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: true
+        usage: devops
+        data_assets_sent:
+        data_assets_received:
+          - npm-dependencies
+      Deploy to GitHub Pages:
+        target: github-pages
+        description: >
+          The deploy workflow pushes the built artifact to the gh-pages branch via
+          peaceiris/actions-gh-pages using the scoped GITHUB_TOKEN (contents: write).
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - built-artifact
+        data_assets_received:
+      Run harden-runner:
+        target: harden-runner
+        description: Every workflow job invokes harden-runner as a pre-step to monitor runner egress.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+          - built-artifact
+        data_assets_received:
+      Run actions-gh-pages:
+        target: actions-gh-pages
+        description: The deploy workflow invokes actions-gh-pages to push the built artifact to the gh-pages branch.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - built-artifact
+        data_assets_received:
+      Run trivy-action:
+        target: trivy-action
+        description: The security-scan workflow invokes trivy-action to scan the filesystem for known CVEs.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+          - npm-dependencies
+        data_assets_received:
+      Run trufflehog:
+        target: trufflehog
+        description: The security-scan workflow invokes trufflehog to scan the git history for verified secrets.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+        data_assets_received:
+      Run scorecard-action:
+        target: scorecard-action
+        description: The scorecards workflow invokes scorecard-action to evaluate OpenSSF best practice compliance.
+        protocol: https
+        authentication: token
+        authorization: technical-user
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: devops
+        data_assets_sent:
+          - source-code
+        data_assets_received:
+
+  GitHub Pages:
+    id: github-pages
+    description: >
+      GitHub Pages hosting serving the built web/index.html from the gh-pages branch over HTTPS.
+      Acts as the CDN/origin for end users accessing the application. All content served is the
+      output of the GitHub Actions build pipeline.
+    type: process
+    usage: business
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: web-server
+    tags:
+      - github
+      - github-pages
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: GitHub
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Integrity critical — GitHub Pages is the delivery mechanism for the application to all users.
+      A tampered gh-pages branch would immediately serve malicious content to all visitors.
+    multi_tenant: true
+    redundant: true
+    custom_developed_parts: false
+    data_assets_processed:
+      - built-artifact
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+      Serve App to Browser:
+        target: montycap-app
+        description: GitHub Pages serves web/index.html over HTTPS; the browser downloads and executes it as the montycap application. This is the primary access path for most users.
+        protocol: https
+        authentication: none
+        authorization: none
+        tags:
+        vpn: false
+        ip_filtered: false
+        readonly: false
+        usage: business
+        data_assets_sent:
+          - built-artifact
+        data_assets_received:
+
+  step-security/harden-runner:
+    id: harden-runner
+    description: >
+      Third-party GitHub Action (step-security/harden-runner @ ab7a9404, v2.19.3) used in every
+      workflow job. Wraps each job to monitor and optionally block unexpected egress from the runner.
+      Pinned to SHA; monitored by Dependabot (github-actions ecosystem).
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: component
+    technology: tool
+    tags:
+      - github-actions
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: StepSecurity
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Integrity critical — executes in every job with full runner access. A compromised version
+      could exfiltrate GITHUB_TOKEN or tamper with the workspace before build or deploy steps run.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+      - built-artifact
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  peaceiris/actions-gh-pages:
+    id: actions-gh-pages
+    description: >
+      Third-party GitHub Action (peaceiris/actions-gh-pages @ 84c30a85, v4.1.0) used in deploy.yml.
+      Pushes the built artifact to the gh-pages branch using the scoped GITHUB_TOKEN.
+      Pinned to SHA; monitored by Dependabot (github-actions ecosystem).
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: component
+    technology: tool
+    tags:
+      - github-actions
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: Peaceiris (individual maintainer)
+    confidentiality: public
+    integrity: critical
+    availability: important
+    justification_cia_rating: >
+      Integrity critical — the only action with write access to the gh-pages branch via GITHUB_TOKEN.
+      A compromised version could deploy arbitrary content to GitHub Pages, affecting all users.
+      Maintained by an individual rather than an organisation, which increases supply chain risk.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - built-artifact
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  aquasecurity/trivy-action:
+    id: trivy-action
+    description: >
+      Third-party GitHub Action (aquasecurity/trivy-action @ ed142fd0, v0.36.0) used in
+      security-scan.yml. Scans the repository filesystem for known CVEs and uploads SARIF results
+      to the GitHub Security tab. Pinned to SHA; monitored by Dependabot.
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: component
+    technology: tool
+    tags:
+      - github-actions
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: Aqua Security
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity important — scans source code and dependencies. A compromised version could
+      suppress real findings or exfiltrate source code. Lower risk than deploy-path actions
+      as it does not affect what gets shipped to users.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+      - npm-dependencies
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  trufflesecurity/trufflehog:
+    id: trufflehog
+    description: >
+      Third-party GitHub Action (trufflesecurity/trufflehog @ 37b77001, pinned to main-branch SHA)
+      used in security-scan.yml. Scans the full git history for verified secrets. Pinned to SHA;
+      monitored by Dependabot. Note: comment references "main" rather than a release tag — SHA
+      should be verified against a known release on each Dependabot update.
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: component
+    technology: tool
+    tags:
+      - github-actions
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: TruffleHog Security
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity important — reads the full git history including any accidentally committed secrets.
+      A compromised version could exfiltrate sensitive content from the repository history.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  ossf/scorecard-action:
+    id: scorecard-action
+    description: >
+      Third-party GitHub Action (ossf/scorecard-action @ 4eaacf05, v2.4.3) used in scorecards.yml.
+      Evaluates the repository against OpenSSF security best practices and uploads results to the
+      GitHub Security tab. Pinned to SHA; monitored by Dependabot.
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: component
+    technology: tool
+    tags:
+      - github-actions
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: OpenSSF (Google-backed foundation)
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity important — reads source code and workflow files. A compromised version could
+      suppress security findings or exfiltrate repository content.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+      - source-code
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  npm Registry:
+    id: npm-registry
+    description: Public npm registry (registry.npmjs.org) serving build-time Node.js packages. External to the application trust boundary; packages used only during CI, not in the deployed artifact.
+    type: external-entity
+    usage: devops
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: web-service-rest
+    tags:
+      - npm
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: npm / Microsoft
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity is important — a compromised npm package could tamper with the build output.
+      Dependabot and Trivy scan for known vulnerabilities. Packages are not shipped to end users.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  Chart.js CDN:
+    id: chartjs-cdn
+    description: Public CDN serving the Chart.js charting library. External to the application trust boundary.
+    type: external-entity
+    usage: business
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: web-service-rest
+    tags:
+      - cdn
+      - chart.js
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: cdnjs / jsDelivr
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity is important — a compromised CDN serving a malicious Chart.js would execute in the user's browser.
+      SRI pinning mitigates this. Availability degrades gracefully: charts fail but text results remain.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+  PapaParse CDN:
+    id: papaparse-cdn
+    description: Public CDN serving the PapaParse CSV parsing library. External to the application trust boundary.
+    type: external-entity
+    usage: business
+    used_as_client_by_human: false
+    out_of_scope: false
+    justification_out_of_scope:
+    size: service
+    technology: web-service-rest
+    tags:
+      - cdn
+      - papaparse
+    internet: true
+    machine: serverless
+    encryption: none
+    owner: cdnjs / jsDelivr
+    confidentiality: public
+    integrity: important
+    availability: operational
+    justification_cia_rating: >
+      Integrity is important — a compromised CDN serving malicious PapaParse would execute in the user's browser.
+      SRI pinning mitigates this. Availability degrades gracefully: CSV import/export fails but manual entry remains.
+    multi_tenant: true
+    redundant: false
+    custom_developed_parts: false
+    data_assets_processed:
+    data_assets_stored:
+    data_formats_accepted:
+    communication_links:
+
+trust_boundaries:
+
+  User Browser Execution Environment:
+    id: user-browser
+    description: >
+      The user's web browser tab executing the montycap application. All application code,
+      state, and computation reside here. No server component exists outside this boundary.
+    type: execution-environment
+    tags:
+    technical_assets_inside:
+      - montycap-app
+    trust_boundaries_nested:
+
+  GitHub Cloud Platform:
+    id: github-cloud
+    description: >
+      GitHub SaaS platform hosting the source code repository, CI/CD pipelines (GitHub Actions),
+      and the GitHub Pages CDN. Multi-tenant infrastructure operated by GitHub/Microsoft.
+    type: network-cloud-provider
+    tags:
+      - github
+    technical_assets_inside:
+      - github-repo
+      - github-actions
+      - github-pages
+    trust_boundaries_nested:
+
+  Third-Party Action Sources:
+    id: third-party-action-sources
+    description: >
+      GitHub-hosted repositories operated by third parties (StepSecurity, Peaceiris, Aqua Security,
+      TruffleHog Security, OpenSSF) whose actions are fetched and executed by the GitHub Actions
+      runner. Distinct from GitHub-operated assets — these are external supply chain dependencies.
+    type: network-cloud-provider
+    tags:
+      - github-actions
+    technical_assets_inside:
+      - harden-runner
+      - actions-gh-pages
+      - trivy-action
+      - trufflehog
+      - scorecard-action
+    trust_boundaries_nested:
+
+  Public CDN Network:
+    id: public-cdn-network
+    description: >
+      Public internet CDN infrastructure serving Chart.js and PapaParse. Outside the
+      application trust boundary; resources loaded via HTTPS with SRI verification.
+    type: network-on-prem
+    tags:
+    technical_assets_inside:
+      - chartjs-cdn
+      - papaparse-cdn
+      - npm-registry
+    trust_boundaries_nested:
+
+individual_risk_categories:
+
+  CDN Supply Chain Compromise:
+    id: cdn-supply-chain-compromise
+    description: >
+      Chart.js or PapaParse served from the CDN is replaced with a malicious version
+      (e.g. via CDN account compromise or BGP hijacking). The malicious script executes
+      in the user's browser with full access to the page.
+    impact: >
+      Arbitrary JavaScript execution in the user's browser session. Potential exfiltration
+      of task configuration data, DOM manipulation, or keylogging.
+    asvs: V14.2 - Dependency
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html
+    action: Verify SRI hashes are current and match the pinned CDN versions on every dependency update.
+    mitigation: >
+      Subresource Integrity (SRI) with SHA-384 hashes prevents the browser from executing
+      any script that does not match the pinned hash. CSP restricts script sources as defence-in-depth.
+    check: Confirm integrity= attributes are present and correct on all CDN script tags.
+    function: architecture
+    stride: tampering
+    detection_logic: SRI mismatch causes the browser to block script execution with a console error.
+    risk_assessment: >
+      Likelihood low — requires CDN compromise. Impact high if successful.
+      Residual risk very low after SRI + CSP controls.
+    false_positives: None expected for a correctly pinned SRI hash.
+    model_failure_possible_reason: false
+    cwe: 829
+    risks_identified:
+      CDN Supply Chain Compromise at Chart.js CDN:
+        severity: high
+        exploitation_likelihood: unlikely
+        exploitation_impact: high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: task-configuration
+        most_relevant_technical_asset: chartjs-cdn
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+      CDN Supply Chain Compromise at PapaParse CDN:
+        severity: high
+        exploitation_likelihood: unlikely
+        exploitation_impact: high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: imported-csv
+        most_relevant_technical_asset: papaparse-cdn
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+
+  XSS via Task Name Input:
+    id: xss-task-name-input
+    description: >
+      A user manually enters a task name containing HTML/script payloads. If rendered via
+      innerHTML the payload executes in the browser. Effectively self-XSS with no persistence
+      or sharing mechanism.
+    impact: >
+      Script execution within the user's own browser session. Limited impact given no
+      data transmission, but controls are warranted as defence-in-depth.
+    asvs: V5.3 - Output Encoding and Injection Prevention
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html
+    action: Audit all DOM rendering paths in src/ui.js to confirm textContent is used throughout.
+    mitigation: >
+      All user-supplied strings inserted via textContent or safe DOM APIs rather than innerHTML.
+      CSP blocks inline script execution as defence-in-depth.
+    check: Grep src/ui.js for innerHTML usage; confirm none operate on user-supplied data.
+    function: development
+    stride: tampering
+    detection_logic: >
+      Static analysis (ESLint) and code review can detect innerHTML usage on user-supplied strings.
+    risk_assessment: Self-XSS only — likelihood and impact both low with no persistence or sharing.
+    false_positives: innerHTML used on static developer-controlled strings is safe.
+    model_failure_possible_reason: false
+    cwe: 79
+    risks_identified:
+      XSS via Task Name at montycap Application:
+        severity: low
+        exploitation_likelihood: unlikely
+        exploitation_impact: low
+        data_breach_probability: improbable
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: task-configuration
+        most_relevant_technical_asset: montycap-app
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+
+  CSV Import XSS:
+    id: csv-import-xss
+    description: >
+      A malicious CSV file contains task fields with embedded HTML or script payloads.
+      On import, if any rendering path uses innerHTML, the payload executes.
+    impact: Script execution in the user's browser session.
+    asvs: V5.3 - Output Encoding and Injection Prevention
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html
+    action: Validate and sanitise all CSV field values before storing in application state.
+    mitigation: >
+      Input sanitisation on CSV import strips dangerous content. DOM API text rendering
+      (textContent) provides defence-in-depth even if sanitisation is incomplete.
+    check: Confirm CSV import validation rejects or strips HTML/script content.
+    function: development
+    stride: tampering
+    detection_logic: Attempting to import a CSV with script tags in task name fields.
+    risk_assessment: Higher likelihood than form-input XSS as CSV can bypass UI friction.
+    false_positives: None expected.
+    model_failure_possible_reason: false
+    cwe: 79
+    risks_identified:
+      CSV Import XSS at montycap Application:
+        severity: medium
+        exploitation_likelihood: likely
+        exploitation_impact: medium
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: imported-csv
+        most_relevant_technical_asset: montycap-app
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+
+  CSV Export Formula Injection:
+    id: csv-export-formula-injection
+    description: >
+      Exported CSV contains task names beginning with =, +, -, or @ which trigger
+      formula execution when opened in Excel or Google Sheets. The impact is on the
+      downstream spreadsheet application, not montycap itself.
+    impact: >
+      Arbitrary formula execution in the downstream spreadsheet application — potentially
+      DDE command execution or data exfiltration from the spreadsheet context.
+    asvs: V5.3 - Output Encoding and Injection Prevention
+    cheat_sheet: https://owasp.org/www-community/attacks/CSV_Injection
+    action: Prefix all exported task name and value fields to neutralise formula trigger characters.
+    mitigation: Tab character prefix applied to task name fields before CSV serialisation.
+    check: Export a task named "=cmd|' /C calc'!A0" and verify the prefix neutralises it.
+    function: development
+    stride: tampering
+    detection_logic: Manual testing with formula trigger characters in task names.
+    risk_assessment: >
+      Delivery vehicle risk only — the impact is on downstream applications, not montycap.
+      Implemented mitigation is straightforward and effective.
+    false_positives: None expected.
+    model_failure_possible_reason: false
+    cwe: 1236
+    risks_identified:
+      Formula Injection via Exported CSV:
+        severity: medium
+        exploitation_likelihood: likely
+        exploitation_impact: medium
+        data_breach_probability: improbable
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: exported-csv
+        most_relevant_technical_asset: montycap-app
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+
+  Simulation Complexity Denial of Service:
+    id: simulation-complexity-dos
+    description: >
+      A crafted CSV import with an extreme number of task rows or extreme quantity values
+      causes the simulation to consume excessive CPU and hang the browser tab.
+    impact: Browser tab becomes unresponsive; user must force-close it.
+    asvs: V11.1 - Business Logic Security
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html
+    action: Enforce maximum values for task count, quantity, and simulation run count.
+    mitigation: Input complexity limits enforced during CSV import and form validation.
+    check: Attempt to import a CSV with 1000 tasks each with quantity 9999 and verify rejection.
+    function: development
+    stride: denial-of-service
+    detection_logic: CSV import with extreme values that would otherwise cause long-running loops.
+    risk_assessment: >
+      Attacker would need physical access to the browser or social engineering to deliver
+      the CSV. Impact limited to single browser tab.
+    false_positives: None expected.
+    model_failure_possible_reason: false
+    cwe: 400
+    risks_identified:
+      Simulation Complexity DoS via CSV Import:
+        severity: medium
+        exploitation_likelihood: likely
+        exploitation_impact: medium
+        data_breach_probability: improbable
+        data_breach_technical_assets:
+          - montycap-app
+        most_relevant_data_asset: imported-csv
+        most_relevant_technical_asset: montycap-app
+        most_relevant_communication_link:
+        most_relevant_trust_boundary:
+        most_relevant_shared_runtime:
+
+  Build Pipeline Supply Chain Attack:
+    id: build-pipeline-supply-chain
+    description: >
+      A malicious GitHub Action, compromised action dependency (e.g. via a mutable tag), or
+      poisoned npm package causes a tampered web/index.html to be built and deployed to GitHub Pages.
+      The attack is silent — the built artifact appears to pass CI checks.
+    impact: >
+      Arbitrary JavaScript injected into web/index.html is served to all users on the next deployment.
+      Every user who opens the application receives and executes the malicious code.
+    asvs: V14.2 - Dependency
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/CI_CD_Security_Cheat_Sheet.html
+    action: Audit all GitHub Actions for pinned SHAs; monitor Dependabot alerts for npm packages.
+    mitigation: >
+      All GitHub Actions are pinned to immutable commit SHAs (not mutable tags). Runner egress is
+      audited via step-security/harden-runner. Dependabot monitors npm and Actions dependencies weekly.
+      Trivy scans the filesystem for known vulnerabilities on every CI run.
+    check: >
+      Verify all uses: entries in workflow files reference a full 40-character SHA, not a tag.
+      Verify Dependabot is configured for both github-actions and npm ecosystems.
+    function: operations
+    stride: tampering
+    detection_logic: >
+      Dependabot raises PRs for outdated or vulnerable dependencies. Trivy scans flag known CVEs.
+      harden-runner audits unexpected outbound network calls from the runner.
+    risk_assessment: >
+      Likelihood low — requires compromise of an upstream action or npm package.
+      Impact critical — would affect every user on next deployment.
+      Residual risk low-medium after SHA pinning, Dependabot, and runner hardening.
+    false_positives: None expected.
+    model_failure_possible_reason: false
+    cwe: 1357
+    risks_identified:
+      Supply Chain Attack via harden-runner:
+        severity: high
+        exploitation_likelihood: unlikely
+        exploitation_impact: very-high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - github-actions
+          - github-pages
+        most_relevant_data_asset: built-artifact
+        most_relevant_technical_asset: harden-runner
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: third-party-action-sources
+        most_relevant_shared_runtime:
+      Supply Chain Attack via actions-gh-pages:
+        severity: critical
+        exploitation_likelihood: unlikely
+        exploitation_impact: very-high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - github-actions
+          - github-pages
+        most_relevant_data_asset: built-artifact
+        most_relevant_technical_asset: actions-gh-pages
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: third-party-action-sources
+        most_relevant_shared_runtime:
+      Supply Chain Attack via trivy-action:
+        severity: medium
+        exploitation_likelihood: unlikely
+        exploitation_impact: high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - github-actions
+        most_relevant_data_asset: source-code
+        most_relevant_technical_asset: trivy-action
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: third-party-action-sources
+        most_relevant_shared_runtime:
+      Supply Chain Attack via trufflehog:
+        severity: medium
+        exploitation_likelihood: unlikely
+        exploitation_impact: high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - github-actions
+        most_relevant_data_asset: source-code
+        most_relevant_technical_asset: trufflehog
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: third-party-action-sources
+        most_relevant_shared_runtime:
+      Supply Chain Attack via scorecard-action:
+        severity: medium
+        exploitation_likelihood: unlikely
+        exploitation_impact: high
+        data_breach_probability: possible
+        data_breach_technical_assets:
+          - github-actions
+        most_relevant_data_asset: source-code
+        most_relevant_technical_asset: scorecard-action
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: third-party-action-sources
+        most_relevant_shared_runtime:
+
+  Unauthorised Deployment via Branch Tampering:
+    id: unauthorised-deployment
+    description: >
+      An attacker gains write access to the main branch or the gh-pages branch (via stolen
+      credentials, a compromised GITHUB_TOKEN, or insufficient branch protection) and pushes
+      a malicious built artifact that is served directly to all users.
+    impact: >
+      Arbitrary JavaScript served to all users via GitHub Pages on the next page load.
+    asvs: V14.3 - Unintended Security Disclosure
+    cheat_sheet: https://cheatsheetseries.owasp.org/cheatsheets/CI_CD_Security_Cheat_Sheet.html
+    action: >
+      Enforce branch protection requiring pull request reviews for main. Restrict who can push
+      to gh-pages. Scope GITHUB_TOKEN to the minimum required permissions.
+    mitigation: >
+      Branch protection on main requires PR review before merge (CODEOWNERS file enforces reviewer
+      assignment). The deploy workflow's GITHUB_TOKEN is scoped to contents: write on the runner
+      only; the token cannot be exfiltrated to create broader access. egress-policy audit limits
+      unexpected outbound calls.
+    check: >
+      Verify main branch protection rules require at least one approving review.
+      Verify the deploy workflow permissions block is explicit and minimal.
+    function: operations
+    stride: tampering
+    detection_logic: >
+      GitHub audit log records all pushes to protected branches and permission changes.
+      harden-runner flags unexpected egress that could indicate token exfiltration.
+    risk_assessment: >
+      Likelihood low — requires credential compromise or branch protection misconfiguration.
+      Impact critical — would serve malicious content to all users immediately.
+      Residual risk low after branch protection and minimal token scope.
+    false_positives: None expected.
+    model_failure_possible_reason: false
+    cwe: 284
+    risks_identified:
+      Unauthorised Deployment at GitHub Repository:
+        severity: high
+        exploitation_likelihood: unlikely
+        exploitation_impact: very-high
+        data_breach_probability: improbable
+        data_breach_technical_assets:
+          - github-repo
+          - github-pages
+        most_relevant_data_asset: built-artifact
+        most_relevant_technical_asset: github-repo
+        most_relevant_communication_link:
+        most_relevant_trust_boundary: github-cloud
+        most_relevant_shared_runtime:
+
+risk_tracking:
+
+  # ── Manually defined risks (mitigated) ──────────────────────────────────────
+
+  build-pipeline-supply-chain@harden-runner@third-party-action-sources@built-artifact:
+    status: mitigated
+    justification: Pinned to SHA ab7a9404 (v2.19.3). Monitored by Dependabot (github-actions ecosystem, weekly). Runs in every job; harden-runner egress auditing is self-referential so SHA integrity is the primary control.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  build-pipeline-supply-chain@actions-gh-pages@third-party-action-sources@built-artifact:
+    status: mitigated
+    justification: Pinned to SHA 84c30a85 (v4.1.0). Monitored by Dependabot (github-actions ecosystem, weekly). Highest-privilege action — sole writer to gh-pages branch via GITHUB_TOKEN. Individual maintainer; SHA pinning is essential.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  build-pipeline-supply-chain@trivy-action@third-party-action-sources@source-code:
+    status: mitigated
+    justification: Pinned to SHA ed142fd0 (v0.36.0). Monitored by Dependabot (github-actions ecosystem, weekly). Does not affect the built artifact; limited blast radius to source code read access.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  build-pipeline-supply-chain@trufflehog@third-party-action-sources@source-code:
+    status: mitigated
+    justification: Pinned to SHA 37b77001. Note — workflow comment says "main" rather than a release tag; SHA should be cross-referenced against a TruffleHog release on each Dependabot update. Monitored by Dependabot weekly.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  build-pipeline-supply-chain@scorecard-action@third-party-action-sources@source-code:
+    status: mitigated
+    justification: Pinned to SHA 4eaacf05 (v2.4.3). Monitored by Dependabot (github-actions ecosystem, weekly). Backed by OpenSSF (Google foundation); lower individual-maintainer risk than peaceiris.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unauthorised-deployment@github-repo@github-cloud@built-artifact:
+    status: mitigated
+    justification: Branch protection requires PR review on main (CODEOWNERS). Deploy GITHUB_TOKEN is scoped to contents:write only. harden-runner limits unexpected egress.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  cdn-supply-chain-compromise@chartjs-cdn@task-configuration:
+    status: mitigated
+    justification: SRI SHA-384 hash pinned for Chart.js; CSP restricts script-src. Hash must be updated on each version bump.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  cdn-supply-chain-compromise@papaparse-cdn@imported-csv:
+    status: mitigated
+    justification: SRI SHA-384 hash pinned for PapaParse; CSP restricts script-src. Hash must be updated on each version bump.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  xss-task-name-input@montycap-app@task-configuration:
+    status: mitigated
+    justification: textContent used throughout src/ui.js. CSP blocks inline script as defence-in-depth.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  csv-import-xss@montycap-app@imported-csv:
+    status: mitigated
+    justification: Input sanitisation on import plus textContent rendering provides two independent layers.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  csv-export-formula-injection@montycap-app@exported-csv:
+    status: mitigated
+    justification: Tab prefix applied to exported fields neutralises formula trigger characters.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  simulation-complexity-dos@montycap-app@imported-csv:
+    status: mitigated
+    justification: Maximum task count, quantity, and run count enforced on import and form submission.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  # ── Auto-generated risk: relevant ───────────────────────────────────────────
+
+  cross-site-scripting@montycap-app:
+    status: mitigated
+    justification: textContent used for all user-supplied data rendering. CSP blocks inline script. Input sanitised on CSV import.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  # ── Auto-generated risks: false positives for browser-only architecture ─────
+  # These rules assume server-side components that do not exist in montycap.
+
+  missing-authentication@montycap-app>load-chart-js-from-cdn@montycap-app@chartjs-cdn:
+    status: false-positive
+    justification: Public CDN resource; authentication is not applicable. The browser fetches a public JS file over HTTPS.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-authentication@montycap-app>load-papaparse-from-cdn@montycap-app@papaparse-cdn:
+    status: false-positive
+    justification: Public CDN resource; authentication is not applicable. The browser fetches a public JS file over HTTPS.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@montycap-app@chartjs-cdn@montycap-app>load-chart-js-from-cdn:
+    status: false-positive
+    justification: montycap is a browser application, not a server. HTTPS requests to CDNs are client-side browser fetches, not server-side requests. SSRF is not applicable.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@montycap-app@papaparse-cdn@montycap-app>load-papaparse-from-cdn:
+    status: false-positive
+    justification: montycap is a browser application, not a server. HTTPS requests to CDNs are client-side browser fetches, not server-side requests. SSRF is not applicable.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-waf@chartjs-cdn:
+    status: false-positive
+    justification: Chart.js CDN is an external entity outside our control. A WAF on our side would not protect against CDN compromise; SRI pinning is the correct control.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-waf@papaparse-cdn:
+    status: false-positive
+    justification: PapaParse CDN is an external entity outside our control. A WAF on our side would not protect against CDN compromise; SRI pinning is the correct control.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unnecessary-communication-link@montycap-app>load-chart-js-from-cdn@montycap-app:
+    status: false-positive
+    justification: This link is necessary — it models the CDN dependency that is the subject of the supply chain compromise threat.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unnecessary-communication-link@montycap-app>load-papaparse-from-cdn@montycap-app:
+    status: false-positive
+    justification: This link is necessary — it models the CDN dependency that is the subject of the supply chain compromise threat.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unnecessary-technical-asset@chartjs-cdn:
+    status: false-positive
+    justification: Chart.js CDN is a real external dependency that must be modelled to represent the supply chain compromise threat surface.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unnecessary-technical-asset@papaparse-cdn:
+    status: false-positive
+    justification: PapaParse CDN is a real external dependency that must be modelled to represent the supply chain compromise threat surface.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  # ── Auto-generated risks: relevant for the CI/CD pipeline ───────────────────
+
+  cross-site-scripting@github-pages:
+    status: mitigated
+    justification: The served artifact is built from source under branch protection. SRI, CSP, and DOM-safe rendering controls in the application source are validated by CI before deployment.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  code-backdooring@github-actions:
+    status: mitigated
+    justification: All GitHub Actions pinned to immutable commit SHAs. Dependabot raises PRs for updates, which require review. harden-runner audits unexpected egress from the runner.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  code-backdooring@github-repo:
+    status: mitigated
+    justification: Branch protection on main requires PR review (CODEOWNERS enforces reviewer assignment). Direct pushes to main are blocked.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  accidental-secret-leak@github-repo:
+    status: mitigated
+    justification: TruffleHog scans the repository on every push to main and weekly. No secrets are used in the application source; the only secret in CI is the short-lived GITHUB_TOKEN.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unchecked-deployment@github-actions:
+    status: mitigated
+    justification: "The deploy workflow validates HTML structure, runs security header checks, and checks for unsafe patterns (eval, innerHTML concatenation, javascript: URIs) before deploying."
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unchecked-deployment@github-repo:
+    status: mitigated
+    justification: Deployments only trigger on push to main, which requires a reviewed and passing PR. The CI workflow must pass before merge.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-authentication-second-factor@developer>push-source-code@developer@github-repo:
+    status: mitigated
+    justification: MFA is enforced at the GitHub organisation level for all contributors. GitHub blocks pushes from accounts without MFA enabled.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  push-instead-of-pull-deployment@github-actions:
+    status: accepted
+    justification: GitHub Pages requires a push-based deployment model (gh-pages branch). Pull-based deployment is not available for GitHub Pages static hosting. The risk is mitigated by branch protection, minimal token scope, and runner egress auditing.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-vault@actions-gh-pages:
+    status: accepted
+    justification: The only secret available to this action is the short-lived GITHUB_TOKEN provisioned by GitHub for the run. It cannot be stored in a vault and expires when the job ends.
+
+  missing-hardening@github-actions:
+    status: mitigated
+    justification: harden-runner wraps every job and audits runner egress. All actions are pinned to immutable commit SHAs. GITHUB_TOKEN permissions are declared explicitly and scoped to the minimum required per workflow. Dependabot monitors action and npm dependencies weekly.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-build-infrastructure@github-actions:
+    status: false-positive
+    justification: github-actions IS the build infrastructure. This risk fires because no separate build-pipeline asset triggers github-actions; the workflow trigger from github-repo is the correct model.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  # ── Auto-generated risks: false positives for GitHub SaaS ───────────────────
+  # GitHub manages hardening, encryption, network segmentation, and identity for their SaaS platform.
+
+  unencrypted-asset@github-actions:
+    status: false-positive
+    justification: GitHub Actions infrastructure is encrypted and hardened by GitHub. We do not control the underlying infrastructure; this is GitHub's responsibility as the SaaS provider.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@github-pages:
+    status: false-positive
+    justification: GitHub Pages serves content over HTTPS (TLS). The Threagile rule fires on the asset's encryption field, which applies to data-at-rest on infrastructure we manage — not applicable to GitHub SaaS.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@github-repo:
+    status: false-positive
+    justification: GitHub repository storage is encrypted by GitHub. We do not control the underlying infrastructure.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-pages@montycap-app@github-pages>serve-app-to-browser:
+    status: false-positive
+    justification: GitHub Pages serving the application to the user's browser is normal HTTPS delivery, not SSRF. There is no server-side URL fetch triggered by user input.
+
+  missing-authentication@github-pages>serve-app-to-browser@github-pages@montycap-app:
+    status: false-positive
+    justification: montycap is intentionally a public application with no authentication. GitHub Pages serves it without credentials by design.
+
+  cross-site-request-forgery@montycap-app@github-pages>serve-app-to-browser:
+    status: false-positive
+    justification: montycap has no server-side sessions or cookies. CSRF requires state-mutating server endpoints — none exist in this browser-only application.
+
+  missing-waf@montycap-app:
+    status: false-positive
+    justification: montycap is a static client-side application. A WAF operates at the HTTP layer of a server; there is no server handling user requests. SRI and CSP provide the equivalent protections for the CDN and script-execution threat surface.
+
+  unencrypted-asset@montycap-app:
+    status: false-positive
+    justification: montycap processes data entirely in browser memory; there is no data-at-rest to encrypt. Content is delivered over HTTPS from GitHub Pages.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@github-pages@github-actions>deploy-to-github-pages:
+    status: false-positive
+    justification: The deploy step pushes a branch via the GitHub API — a controlled, authenticated operation with a scoped token, not an SSRF-prone URL fetch.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@npm-registry@github-actions>fetch-npm-dependencies:
+    status: false-positive
+    justification: npm ci fetching packages from the npm registry is expected and controlled. harden-runner audits all egress; the npm registry URL is the only expected outbound target.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-repo@github-actions@github-repo>trigger-ci-on-push:
+    status: false-positive
+    justification: GitHub triggering its own CI system on push is expected internal platform behaviour, not an SSRF risk.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  cross-site-request-forgery@github-pages@github-actions>deploy-to-github-pages:
+    status: false-positive
+    justification: GitHub Pages deployment is an authenticated server-to-server API call using a scoped token. There is no browser session or cookie involved; CSRF does not apply.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-network-segmentation@github-repo:
+    status: false-positive
+    justification: Network segmentation for GitHub SaaS infrastructure is managed by GitHub. We do not control the underlying network topology.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-authentication@github-actions>fetch-npm-dependencies@github-actions@npm-registry:
+    status: false-positive
+    justification: The npm registry is a public package registry. Authentication is not required or expected for fetching public packages.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-cloud-hardening@github-cloud:
+    status: false-positive
+    justification: Cloud hardening for GitHub infrastructure is GitHub's responsibility as the SaaS provider. We apply controls within our trust boundary (branch protection, token scope, runner hardening).
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-identity-store@github-repo:
+    status: false-positive
+    justification: GitHub manages identity and authentication for repository access. We do not operate a separate identity store; GitHub SSO/2FA is enforced at the organisation level.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unguarded-access-from-internet@github-actions@github-repo@github-repo>trigger-ci-on-push:
+    status: false-positive
+    justification: GitHub triggering CI on push is expected platform behaviour. Access to the repository requires authentication; webhook events are signed by GitHub.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-hardening@github-repo:
+    status: false-positive
+    justification: Server hardening for GitHub repository infrastructure is GitHub's responsibility. Application-level hardening (branch protection, CODEOWNERS, token scope) is implemented.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unnecessary-technical-asset@npm-registry:
+    status: false-positive
+    justification: The npm registry is a real and necessary dependency — build-time packages are fetched from it during every CI run. Dependabot monitors it for vulnerabilities.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-waf@npm-registry:
+    status: false-positive
+    justification: The npm registry is a public external service outside our control. A WAF on our side would not protect against compromised packages; Dependabot and Trivy are the correct controls.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+
+  wrong-communication-link-content@montycap-app@montycap-app>load-chart-js-from-cdn:
+    status: false-positive
+    justification: CDN delivers JavaScript library code, not a data asset tracked in this model. The readonly flag is correct; the Threagile rule does not accommodate library delivery flows.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  wrong-communication-link-content@montycap-app@montycap-app>load-papaparse-from-cdn:
+    status: false-positive
+    justification: CDN delivers JavaScript library code, not a data asset tracked in this model. The readonly flag is correct; the Threagile rule does not accommodate library delivery flows.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  wrong-communication-link-content@montycap-app@montycap-app>deliver-simulation-results-to-user:
+    status: false-positive
+    justification: Threagile has no browser-native protocol type; in-process-library-call is the closest approximation. The mismatch is a modelling gap — browser DOM interactions are not network protocols.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  wrong-communication-link-content@montycap-app@montycap-app>deliver-exported-csv-to-user:
+    status: false-positive
+    justification: Threagile has no browser-native protocol type; in-process-library-call is the closest approximation. The mismatch is a modelling gap — Blob URL downloads are not network protocols.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  wrong-communication-link-content@user@user>form-input:
+    status: false-positive
+    justification: Threagile has no browser-native protocol type; in-process-library-call is the closest approximation. The mismatch is a modelling gap — browser form events are not network protocols.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  wrong-communication-link-content@user@user>csv-upload:
+    status: false-positive
+    justification: Threagile has no browser-native protocol type; in-process-library-call is the closest approximation. The mismatch is a modelling gap — the File API is a browser API, not a network protocol.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  # ── Auto-generated risks: false positives for third-party action invocations ──
+
+  server-side-request-forgery@github-actions@harden-runner@github-actions>run-harden-runner:
+    status: false-positive
+    justification: The Actions runner fetching and executing a third-party action is expected CI/CD behaviour, not SSRF. The action is fetched by the GitHub platform, not by user-supplied input.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@actions-gh-pages@github-actions>run-actions-gh-pages:
+    status: false-positive
+    justification: The Actions runner fetching and executing a third-party action is expected CI/CD behaviour, not SSRF. The action is fetched by the GitHub platform, not by user-supplied input.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@trivy-action@github-actions>run-trivy-action:
+    status: false-positive
+    justification: The Actions runner fetching and executing a third-party action is expected CI/CD behaviour, not SSRF. The action is fetched by the GitHub platform, not by user-supplied input.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@trufflehog@github-actions>run-trufflehog:
+    status: false-positive
+    justification: The Actions runner fetching and executing a third-party action is expected CI/CD behaviour, not SSRF. The action is fetched by the GitHub platform, not by user-supplied input.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  server-side-request-forgery@github-actions@scorecard-action@github-actions>run-scorecard-action:
+    status: false-positive
+    justification: The Actions runner fetching and executing a third-party action is expected CI/CD behaviour, not SSRF. The action is fetched by the GitHub platform, not by user-supplied input.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unguarded-access-from-internet@harden-runner@github-actions@github-actions>run-harden-runner:
+    status: false-positive
+    justification: The GitHub Actions runner invoking harden-runner is expected platform behaviour. Access requires a GitHub-authenticated workflow run; this is not unguarded public access.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unguarded-access-from-internet@actions-gh-pages@github-actions@github-actions>run-actions-gh-pages:
+    status: false-positive
+    justification: The GitHub Actions runner invoking actions-gh-pages is expected platform behaviour. Access requires a GitHub-authenticated workflow run with contents:write permission; this is not unguarded public access.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@harden-runner:
+    status: false-positive
+    justification: harden-runner is an external service operated by StepSecurity. Encryption of their infrastructure is their responsibility. The risk to us is supply chain integrity, addressed by SHA pinning.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@actions-gh-pages:
+    status: false-positive
+    justification: actions-gh-pages is an external service. Encryption of their infrastructure is their responsibility. The risk to us is supply chain integrity, addressed by SHA pinning.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@trivy-action:
+    status: false-positive
+    justification: trivy-action is an external service operated by Aqua Security. Encryption of their infrastructure is their responsibility. The risk to us is supply chain integrity, addressed by SHA pinning.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@trufflehog:
+    status: false-positive
+    justification: trufflehog is an external service operated by TruffleHog Security. Encryption of their infrastructure is their responsibility. The risk to us is supply chain integrity, addressed by SHA pinning.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  unencrypted-asset@scorecard-action:
+    status: false-positive
+    justification: scorecard-action is an external service operated by OpenSSF. Encryption of their infrastructure is their responsibility. The risk to us is supply chain integrity, addressed by SHA pinning.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
+
+  missing-cloud-hardening@third-party-action-sources:
+    status: false-positive
+    justification: Cloud hardening for third-party action repositories is the responsibility of each action's operator. Our control is SHA pinning and Dependabot monitoring, not infrastructure hardening of external services.
+    ticket:
+    date: 2026-05-25
+    checked_by: "@garethm"
