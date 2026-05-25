@@ -203,13 +203,15 @@ Dataflow(session_state, chart_renderer, "result data", data=[simulation_results]
 def generate_report():
     """Write a markdown findings report to stdout."""
     tm.resolve()
+    findings = [f for f in tm.findings if f.threat_id not in EXCLUDE.split(",")]
 
     print(f"# Threat Model Report: {tm.name}\n")
     print(f"{tm.description}\n")
-    print(f"## Findings ({len(tm.findings)} total)\n")
+    unique = len({f.threat_id for f in findings})
+    print(f"## Findings ({unique} unique threats across {len(findings)} targets)\n")
 
     by_severity = {"Very High": [], "High": [], "Medium": [], "Low": []}
-    for f in tm.findings:
+    for f in findings:
         bucket = by_severity.get(f.severity, by_severity["Low"])
         bucket.append(f)
 
@@ -227,10 +229,47 @@ def generate_report():
             print(f"- **Mitigations:** {f.mitigations}\n")
 
 
+# ── Exclusions ────────────────────────────────────────────────────────────────
+#
+# pytm's built-in threat library targets server-side architectures. The
+# exclusions below remove threats that are categorically inapplicable to a
+# browser-only application with no server, no authentication, and no network
+# transmission of user data. Each group is explained inline.
+#
+# Passing this list via sys.argv before tm.process() is the mechanism pytm
+# exposes for exclusions (equivalent to --exclude on the CLI).
+
+EXCLUDE = ",".join([
+    # Buffer overflows — JavaScript is garbage-collected; C memory safety
+    # attacks (stack/heap overflows, bounds violations) do not apply.
+    "INP02", "INP07", "INP08", "INP12", "INP24",
+
+    # OS-level injection — no shell, no OS process, no server-side execution.
+    "INP13", "INP25", "INP31",
+
+    # XML attacks — neither PapaParse nor Chart.js parses XML; no DTD, no SOAP.
+    "INP32", "AC04", "AC15",
+
+    # Authentication and session attacks — there is no login mechanism,
+    # no session token, and no credential store.
+    "AA01", "AA02",
+    "AC12", "AC13", "AC14", "AC18", "AC20", "AC21",
+    "CR03", "CR05",
+
+    # Network transmission attacks — user data never leaves the browser.
+    # Interception, sniffing, and channel manipulation require a network path.
+    "CR06", "CR08", "DE01", "DE03", "DR01",
+
+    # Server infrastructure — no audit logs, no server processes, no registry.
+    "AC01", "DE04",
+])
+
+
 if __name__ == "__main__":
     import sys
     if "--markdown" in sys.argv:
         sys.argv.remove("--markdown")
         generate_report()
     else:
+        sys.argv.extend(["--exclude", EXCLUDE])
         tm.process()
