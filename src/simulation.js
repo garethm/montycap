@@ -9,8 +9,9 @@ export function gammaRandom(shape) {
     if (shape < 1) {
         // Math.pow(u, 1/shape) underflows to 0 for small u when shape is small.
         // Clamp to Number.MIN_VALUE: the true value is near-zero, not zero.
+        // The final product can also underflow to 0 (e.g. MIN_VALUE * <1), so clamp it too.
         const scale = Math.pow(Math.random(), 1 / shape) || Number.MIN_VALUE;
-        return gammaRandom(shape + 1) * scale;
+        return (gammaRandom(shape + 1) * scale) || Number.MIN_VALUE;
     }
 
     const d = shape - 1/3;
