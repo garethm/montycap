@@ -90,7 +90,7 @@ Tests import pure functions directly from `src/simulation.js` as an ES module. N
 
 ## Configuration
 
-No vitest config file — vitest's zero-config defaults are sufficient for plain JavaScript ES modules.
+`vitest.config.mjs` at the repository root registers `test/setup.js` as a setup file, which exposes PapaParse as the global `Papa` (matching the CDN-loaded global in the browser). Otherwise vitest's defaults are used.
 
 ## Usage Examples
 
