@@ -4,7 +4,7 @@ vitest is the test runner for the project's automated test suite.
 
 ## Decision
 
-Use **vitest** (pinned to exact version in `package.json`) as the test runner. Tests are configured via `vitest.config.js` at the repository root.
+Use **vitest** (pinned to exact version in `package.json`) as the test runner. Tests are configured via `vitest.config.mjs` at the repository root.
 
 ## Rationale
 

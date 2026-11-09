@@ -4,7 +4,7 @@ happy-dom is the DOM environment used by vitest when testing DOM-coupled functio
 
 ## Decision
 
-Use **happy-dom** (pinned to exact version in `package.json`) as the vitest DOM test environment, configured via `vitest.config.js`.
+Use **happy-dom** (pinned to exact version in `package.json`) as the vitest DOM test environment, configured via `vitest.config.mjs`.
 
 ## Rationale
 
