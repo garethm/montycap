@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, it, beforeEach, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import fc from 'fast-check';
-import { addTaskFromData, parseCSV, buildCSV, sanitizeCsvCell, unsanitizeCsvCell } from '../src/ui.js';
+import { addTaskFromData, parseCSV, buildCSV, sanitizeCsvCell, unsanitizeCsvCell, bindStaticControls } from '../src/ui.js';
 
 const EVENT_HANDLER_ATTRS = [
     'onabort', 'onblur', 'onchange', 'onclick', 'onclose', 'oncontextmenu',
@@ -244,5 +246,37 @@ describe('CSV injection round-trip', () => {
         parseCSV(csv);
         const nameInput = document.querySelector('.task-input input[type="text"]');
         expect(nameInput.value).toBe(original);
+    });
+});
+
+// The CSP permits only hashed scripts, so inline handler attributes in the
+// template are silently blocked by the browser and must not be used.
+describe('template static controls', () => {
+    const template = readFileSync(join(process.cwd(), 'src/template.html'), 'utf8');
+    const templateBody = new DOMParser().parseFromString(template, 'text/html').body.innerHTML;
+
+    it('template contains no inline event handler attributes', () => {
+        const doc = new DOMParser().parseFromString(template, 'text/html');
+        const offenders = [...doc.querySelectorAll('*')].flatMap(el =>
+            [...el.attributes].filter(attr => attr.name.startsWith('on')).map(attr => `<${el.tagName.toLowerCase()} ${attr.name}>`)
+        );
+        expect(offenders).toEqual([]);
+    });
+
+    beforeEach(() => {
+        document.body.innerHTML = templateBody;
+        bindStaticControls();
+    });
+
+    it('Add Task button adds a task', () => {
+        const before = document.querySelectorAll('#tasks .task-input').length;
+        document.getElementById('addTaskBtn').click();
+        expect(document.querySelectorAll('#tasks .task-input').length).toBe(before + 1);
+    });
+
+    it('Remove buttons on the default tasks remove their task', () => {
+        const before = document.querySelectorAll('#tasks .task-input').length;
+        document.querySelector('#tasks .remove-btn').click();
+        expect(document.querySelectorAll('#tasks .task-input').length).toBe(before - 1);
     });
 });
