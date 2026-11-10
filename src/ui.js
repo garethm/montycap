@@ -760,7 +760,20 @@ function exportToFile() {
     window.URL.revokeObjectURL(url);
 }
 
+// The CSP permits only hashed scripts, which blocks inline onclick= attributes,
+// so static controls in the template are wired here instead.
+export function bindStaticControls() {
+    document.getElementById('loadFileBtn').addEventListener('click', loadFromFile);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportToFile);
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('runButton').addEventListener('click', runSimulation);
+    document.querySelectorAll('#tasks .remove-btn').forEach(button => {
+        button.addEventListener('click', function() { removeTask(this); });
+    });
+}
+
 window.addEventListener('load', function() {
+    bindStaticControls();
     document.getElementById('simulations').addEventListener('input', validateInputLimits);
     document.getElementById('programQuantity').addEventListener('input', validateInputLimits);
     setTimeout(runSimulation, 500);
