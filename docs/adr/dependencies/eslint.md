@@ -87,7 +87,7 @@ A trial run of the recommended configuration against the sources on 2026-11-10 (
 | `setTimeout` not defined (2 occurrences) | `no-undef` | Missing global declaration; resolved by layer 3 |
 | `chart` assigned but never used | `no-unused-vars` | Dead variable retained "for backward compatibility"; remove |
 | `capacity` parameter of `createEffortChart` never used | `no-unused-vars` | The caller passes capacity but the effort histogram does not draw it; either render a capacity marker or drop the parameter |
-| `addTask`, `loadFromFile`, `exportToFile` defined but never used | `no-unused-vars` | Referenced only from inline `onclick` attributes in `src/template.html`; resolve by wiring these buttons with `addEventListener` in `ui.js`, as the dynamically created Remove buttons already are |
+| `addTask`, `loadFromFile`, `exportToFile` defined but never used | `no-unused-vars` | **Genuine defect, since fixed.** Referenced only from inline `onclick` attributes in `src/template.html`, which the Content Security Policy blocks, so these buttons did nothing in the deployed app. Fixed in [#190](https://github.com/garethm/montycap/pull/190) by wiring all static buttons with `addEventListener`; this finding no longer occurs once that change is merged |
 
 No `eqeqeq`, eval, or DOM XSS violations were found; the codebase already complies with [dom-xss-prevention.md](../security/dom-xss-prevention.md). A probe file confirmed that each `no-restricted-syntax` selector fires on the prohibited pattern and that `element.innerHTML = ''` remains permitted.
 
@@ -97,7 +97,7 @@ No `eqeqeq`, eval, or DOM XSS violations were found; the codebase already compli
 
 **Catches syntax errors before the build.** The build concatenates the sources into a single inline script; a syntax error in either file would break the whole application at load time. Linting the sources directly reports the error against the original file and line, rather than against the assembled `web/index.html`.
 
-**The recommended set catches defects, not style.** The trial run found dead code and an unused parameter that hints at an unrendered capacity marker, none of which a syntax check can detect. `no-undef` matters more than usual here: the build strips `import`/`export` and concatenates both files into one browser script, so every top-level name lives in a single shared global scope and a misspelled identifier fails only when its code path runs in the browser.
+**The recommended set catches defects, not style.** The trial run found a production bug: the `no-unused-vars` findings for `addTask`, `loadFromFile`, and `exportToFile` led directly to the discovery that five buttons had been silently broken by the Content Security Policy since it was introduced. It also found dead code and an unused parameter that hints at an unrendered capacity marker. None of these is detectable by a syntax check. `no-undef` matters more than usual here: the build strips `import`/`export` and concatenates both files into one browser script, so every top-level name lives in a single shared global scope and a misspelled identifier fails only when its code path runs in the browser.
 
 **Turns a policy into a check.** [dom-xss-prevention.md](../security/dom-xss-prevention.md) prohibits interpolated `innerHTML` and claims the benefit of "a single mechanical check" for reviewers, but nothing currently performs that check. The `no-restricted-syntax` selectors make it automatic in pre-commit and CI, so the policy holds as the codebase grows rather than relying on review vigilance.
 
