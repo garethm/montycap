@@ -19,6 +19,8 @@ Save this file as `YYYY-MM-DD.md` in `docs/development/dependency-reviews/`.
 
 **Notes**: [Any findings, mitigations accepted, or context for deferred actions]
 
+**Provenance**: [Output summary of `npm run attestations`, e.g. "54 of 161 packages have provenance; no regressions". Note any packages that gained or lost provenance since the last review, and refresh the baseline with `npm run attestations:update` if it is out of date]
+
 **Next review due**: YYYY-MM-DD
 
 ---

@@ -34,6 +34,12 @@ npm test
 ```
 Runs property-based tests in `test/` using vitest and fast-check.
 
+### Dependency Provenance
+```
+npm run attestations
+```
+Checks the npm provenance attestations of every package in `package-lock.json` against the baseline in `dependency-attestations.json`, failing if a package loses provenance or changes source repository. Run `npm run attestations:update` to refresh the baseline after a dependency change, and commit it with the lock file. Needs network access to the npm registry. See `docs/adr/security/dependency-attestations.md`.
+
 ### Threat Model
 ```
 npm run threatmodel
