@@ -7,7 +7,7 @@ The repository is organised into directories that separate source files, build a
 ```text
 montycap/
 ├── src/                   Source files assembled by the build step
-├── scripts/               Build tooling
+├── scripts/               Build and supply chain tooling
 ├── test/                  Automated tests
 ├── web/                   Built artifact (gitignored)
 ├── docs/                  All project documentation

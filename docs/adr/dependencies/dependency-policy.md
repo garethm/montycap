@@ -18,7 +18,7 @@ Each dependency ADR must document:
 1. What the dependency does and why it is needed
 2. Alternatives considered and why they were not chosen
 3. A health assessment against the criteria below
-4. Supply chain implications (npm: transitive dependency count, lifecycle script requirements; CDN: pinned version and SRI hash requirement)
+4. Supply chain implications (npm: transitive dependency count, lifecycle script requirements, provenance attestation status; CDN: pinned version and SRI hash requirement)
 
 ### Health assessment criteria
 
@@ -43,7 +43,7 @@ The dependencies present when this policy was adopted — `eslint`, `fast-check`
 
 ## Rationale
 
-**Supply chain risk is proportional to dependency count.** Every added package is an additional trust decision. Keeping the dependency surface small and intentional is the most effective first-order control, complementing the existing controls of exact pinning, a committed lock file, `npm ci --ignore-scripts`, and Dependabot.
+**Supply chain risk is proportional to dependency count.** Every added package is an additional trust decision. Keeping the dependency surface small and intentional is the most effective first-order control, complementing the existing controls of exact pinning, a committed lock file, `npm ci --ignore-scripts`, provenance attestation checks, and Dependabot.
 
 **Decisions without records get revisited unnecessarily.** When a dependency was added without documented rationale, future maintainers cannot tell whether alternatives were considered or whether the choice is still the right one. An ADR makes the decision durable.
 
@@ -73,6 +73,7 @@ The dependencies present when this policy was adopted — `eslint`, `fast-check`
 
 - [dependency-reviews/](../development/dependency-reviews/)
 - [../security/openssf-scorecard.md](../security/openssf-scorecard.md)
+- [../security/dependency-attestations.md](../security/dependency-attestations.md)
 
 ## History
 

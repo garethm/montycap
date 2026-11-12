@@ -32,6 +32,12 @@ jobs:
     - name: Install dependencies
       run: npm ci --ignore-scripts
 
+    - name: Verify registry signatures and attestations
+      run: npm audit signatures
+
+    - name: Check provenance against baseline
+      run: npm run attestations
+
     - name: Lint JavaScript
       run: npx eslint src/simulation.js src/ui.js
 
