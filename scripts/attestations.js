@@ -88,9 +88,14 @@ function parseProvenance(response) {
     };
 }
 
+// Names and versions come from the lock file, so encode them in full: a
+// malformed entry must not be able to change which registry path is queried.
+function attestationUrl(pkg) {
+    return `${REGISTRY}/-/npm/v1/attestations/${encodeURIComponent(pkg.name)}@${encodeURIComponent(pkg.version)}`;
+}
+
 async function fetchProvenance(pkg) {
-    const url = `${REGISTRY}/-/npm/v1/attestations/${pkg.name.replace('/', '%2f')}@${pkg.version}`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    const response = await fetch(attestationUrl(pkg), { signal: AbortSignal.timeout(15000) });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`${keyOf(pkg)}: registry returned ${response.status}`);
 
@@ -192,4 +197,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { lockPackages, parseProvenance, compare, compareVersions, integrityToHex };
+module.exports = { lockPackages, attestationUrl, parseProvenance, compare, compareVersions, integrityToHex };

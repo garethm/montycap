@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { lockPackages, parseProvenance, compare, compareVersions, integrityToHex } from '../scripts/attestations.js';
+import { lockPackages, attestationUrl, parseProvenance, compare, compareVersions, integrityToHex } from '../scripts/attestations.js';
 
 const VITEST = { repository: 'github.com/vitest-dev/vitest', workflow: '.github/workflows/publish.yml', commit: 'aaa' };
 
@@ -29,6 +29,21 @@ describe('lockPackages', () => {
         };
         expect(lockPackages(lock).map(p => `${p.name}@${p.version}`))
             .toEqual(['@types/ws@8.18.1', 'ajv@6.15.0', 'ajv@8.20.0']);
+    });
+});
+
+describe('attestationUrl', () => {
+    const PREFIX = 'https://registry.npmjs.org/-/npm/v1/attestations/';
+
+    it('encodes scoped package names', () => {
+        expect(attestationUrl({ name: '@eslint/core', version: '1.2.1' })).toBe(`${PREFIX}%40eslint%2Fcore@1.2.1`);
+    });
+
+    it('keeps any name and version within a single path segment', () => {
+        fc.assert(fc.property(fc.string(), fc.string(), (name, version) => {
+            const segment = attestationUrl({ name, version }).slice(PREFIX.length);
+            return !/[/?#]/.test(segment);
+        }));
     });
 });
 
